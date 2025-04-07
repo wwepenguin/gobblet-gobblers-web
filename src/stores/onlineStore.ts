@@ -55,7 +55,7 @@ export const initPeer = () => {
         onlineStore.connectionId = conn.peer
         onlineStore.connectionStatus = 'connected'
         
-        conn.on('data', (data) => {
+        conn.on('data', (data: unknown) => {
           handleDataReceived(data)
         })
         
@@ -92,7 +92,7 @@ export const connectToPeer = (peerId: string) => {
     sendData({ type: 'ready' })
   })
   
-  connection.on('data', (data) => {
+  connection.on('data', (data: unknown) => {
     handleDataReceived(data)
   })
   

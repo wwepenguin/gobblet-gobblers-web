@@ -40,7 +40,7 @@ const props = defineProps<{
   isHost?: boolean
 }>()
 
-const emit = defineEmits<{
+defineEmits<{
   (e: 'restart'): void
 }>()
 

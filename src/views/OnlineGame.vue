@@ -103,7 +103,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
+import { ref, computed, onBeforeUnmount, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import GameBoard from '../components/game/GameBoard.vue'
 import PlayerHand from '../components/game/PlayerHand.vue'
@@ -188,15 +188,6 @@ const sendSelect = (piece: any, x: number, y: number) => {
 const sendReset = () => {
   sendResetAction()
   startTipKey.value++ // 觸發先手提示重新顯示
-}
-
-// 顯示當前 Peer ID
-const showCurrentPeerId = () => {
-  console.log('當前 Peer ID:', peerId.value)
-  console.log('connectionStatus:', connectionStatus.value)
-  console.log('onlineStore:', onlineStore)
-  alert('當前 Peer ID: ' + (peerId.value || '無') + 
-        '\n連接狀態: ' + connectionStatus.value)
 }
 
 // 返回主頁

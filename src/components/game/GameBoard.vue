@@ -32,7 +32,7 @@
 import { computed } from 'vue'
 import GamePiece from './GamePiece.vue'
 import { gameStore, selectPiece, placePiece } from '../../stores/gameStore'
-import { GamePiece as GamePieceType } from '../../types/game'
+import type { GamePiece as GamePieceType } from '../../types/game'
 
 const props = defineProps<{
   online?: boolean
@@ -72,12 +72,12 @@ const handleCellClick = (x: number, y: number) => {
 }
 
 // 選擇棋盤上的棋子
-const selectBoardPiece = (piece: GamePieceType, x: number, y: number) => {
+const selectBoardPiece = (piece: GamePieceType | null, x: number, y: number) => {
   if (props.online && !props.isMyTurn) {
     return
   }
   
-  if (isPieceSelectable(piece)) {
+  if (piece && isPieceSelectable(piece)) {
     selectPiece(piece, 'board', { x, y })
     
     if (props.online) {

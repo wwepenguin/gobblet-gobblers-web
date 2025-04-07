@@ -28,7 +28,7 @@
 import { computed } from 'vue'
 import GamePiece from './GamePiece.vue'
 import { gameStore, selectPiece, createPiece } from '../../stores/gameStore'
-import { PieceSize, PlayerType } from '../../types/game'
+import type { PieceSize, PlayerType } from '../../types/game'
 
 const props = defineProps<{
   player: PlayerType

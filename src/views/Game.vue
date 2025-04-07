@@ -88,8 +88,6 @@ const handleResetGame = () => {
   transition: all 0.2s ease;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
-ser.email=penguin_jan@mail.chungyo.net
-user.name=penguin_jan
 .control-button:hover {
   background-color: #394280;
   transform: translateY(-2px);

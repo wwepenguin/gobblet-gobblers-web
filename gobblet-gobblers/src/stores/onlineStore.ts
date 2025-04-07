@@ -25,42 +25,50 @@ export const initPeer = () => {
   return new Promise<string>((resolve, reject) => {
     resetGame()
     
-    peer = new Peer({
-      config: {
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:global.stun.twilio.com:3478?transport=udp' }
-        ]
-      }
-    })
-    
-    peer.on('open', (id) => {
-      onlineStore.peerId = id
-      onlineStore.isHost = true
-      onlineStore.connectionStatus = 'connecting'
-      resolve(id)
-    })
-    
-    peer.on('error', (error) => {
-      console.error('PeerJS 錯誤:', error)
+    try {
+      console.log('初始化 Peer...')
+      peer = new Peer({
+        config: {
+          iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:global.stun.twilio.com:3478?transport=udp' }
+          ]
+        }
+      })
+      
+      peer.on('open', (id) => {
+        console.log('Peer 打開連接，ID:', id)
+        onlineStore.peerId = id
+        onlineStore.isHost = true
+        onlineStore.connectionStatus = 'connecting'
+        console.log('Store 中的 peerId:', onlineStore.peerId)
+        resolve(id)
+      })
+      
+      peer.on('error', (error) => {
+        console.error('PeerJS 錯誤:', error)
+        reject(error)
+      })
+      
+      peer.on('connection', (conn) => {
+        connection = conn
+        onlineStore.connectionId = conn.peer
+        onlineStore.connectionStatus = 'connected'
+        
+        conn.on('data', (data) => {
+          handleDataReceived(data)
+        })
+        
+        conn.on('close', () => {
+          onlineStore.connectionStatus = 'disconnected'
+          onlineStore.connectionId = null
+          connection = null
+        })
+      })
+    } catch (error) {
+      console.error('初始化 Peer 時出錯:', error)
       reject(error)
-    })
-    
-    peer.on('connection', (conn) => {
-      connection = conn
-      onlineStore.connectionId = conn.peer
-      onlineStore.connectionStatus = 'connected'
-      
-      conn.on('data', (data) => {
-        handleDataReceived(data)
-      })
-      
-      conn.on('close', () => {
-        onlineStore.connectionStatus = 'disconnected'
-        onlineStore.connectionId = null
-        connection = null
-      })
-    })
+    }
   })
 }
 

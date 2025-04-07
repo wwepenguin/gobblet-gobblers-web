@@ -9,13 +9,14 @@
       </div>
     </div>
     
+    <!-- 未連接狀態 - 顯示創建/加入遊戲選項 -->
     <div v-if="connectionStatus === 'disconnected'" class="connection-panel">
       <div class="connection-options">
         <div class="connection-option">
           <h3>創建遊戲</h3>
           <button class="action-button" @click="createGame">創建遊戲</button>
           <div v-if="peerId" class="peer-id-display">
-            <p>遊戲 ID：</p>
+            <p>遊戲 ID：({{ peerId }})</p>
             <div class="peer-id">
               <span>{{ peerId }}</span>
               <button class="copy-button" @click="copyPeerId">複製</button>
@@ -47,7 +48,26 @@
       </div>
     </div>
     
-    <template v-else>
+    <!-- 連接中狀態 - 顯示等待玩家連接 -->
+    <div v-else-if="connectionStatus === 'connecting'" class="connection-panel">
+      <div class="waiting-panel">
+        <h2>等待玩家連接...</h2>
+        <div class="loader"></div>
+        
+        <div class="peer-id-display" v-if="isHost && peerId">
+          <p>分享此遊戲 ID 給你的朋友：</p>
+          <div class="peer-id">
+            <span>{{ peerId }}</span>
+            <button class="copy-button" @click="copyPeerId">複製</button>
+          </div>
+        </div>
+        
+        <button class="cancel-button" @click="disconnect">取消</button>
+      </div>
+    </div>
+    
+    <!-- 已連接狀態 - 顯示遊戲界面 -->
+    <template v-else-if="connectionStatus === 'connected'">
       <GameStatus 
         :online="true" 
         :connection-status="connectionStatus"
@@ -83,7 +103,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import GameBoard from '../components/game/GameBoard.vue'
 import PlayerHand from '../components/game/PlayerHand.vue'
@@ -113,9 +133,15 @@ const startTipKey = ref(0)
 // 創建遊戲
 const createGame = async () => {
   try {
-    await initPeer()
+    const id = await initPeer()
+    console.log('創建遊戲成功，Peer ID:', id)
+    // 確保 peerId 被正確設置
+    if (!peerId.value) {
+      alert('遊戲 ID 生成失敗，請重試')
+    }
   } catch (error) {
     console.error('初始化 Peer 出錯:', error)
+    alert('創建遊戲失敗，請重試')
   }
 }
 
@@ -164,11 +190,28 @@ const sendReset = () => {
   startTipKey.value++ // 觸發先手提示重新顯示
 }
 
+// 顯示當前 Peer ID
+const showCurrentPeerId = () => {
+  console.log('當前 Peer ID:', peerId.value)
+  console.log('connectionStatus:', connectionStatus.value)
+  console.log('onlineStore:', onlineStore)
+  alert('當前 Peer ID: ' + (peerId.value || '無') + 
+        '\n連接狀態: ' + connectionStatus.value)
+}
+
 // 返回主頁
 const goToHome = () => {
   disconnect()
   router.push('/')
 }
+
+// 監聽 peerId 的變更
+watch(() => onlineStore.peerId, (newValue) => {
+  console.log('peerId 變更為:', newValue)
+  if (newValue) {
+    console.log('成功獲取 Peer ID')
+  }
+})
 
 // 組件卸載前斷開連接
 onBeforeUnmount(() => {
@@ -328,5 +371,51 @@ onBeforeUnmount(() => {
   flex: 1;
   display: flex;
   justify-content: center;
+}
+
+/* 等待連接頁面樣式 */
+.waiting-panel {
+  text-align: center;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.waiting-panel h2 {
+  color: #4a55a2;
+  margin: 0;
+}
+
+.loader {
+  width: 50px;
+  height: 50px;
+  border: 5px solid #f3f3f3;
+  border-top: 5px solid #4a55a2;
+  border-radius: 50%;
+  animation: spin 1.5s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.cancel-button {
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-top: 1rem;
+}
+
+.cancel-button:hover {
+  background-color: #c0392b;
 }
 </style> 

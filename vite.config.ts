@@ -4,6 +4,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: '/GGame/',
   server:{
     host:'0.0.0.0',
   },
@@ -38,7 +39,7 @@ export default defineConfig({
         ],
         display: 'standalone',
         orientation: 'portrait',
-        start_url: '/'
+        start_url: '/GGame/'
       }
     })
   ],

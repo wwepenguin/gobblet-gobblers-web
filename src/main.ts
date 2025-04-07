@@ -24,8 +24,11 @@ const routes = [
   { path: '/online', component: OnlineGame }
 ]
 
+// 取得正確的 base 路徑，與 vite.config.ts 的配置相同
+const base = import.meta.env.BASE_URL || '/GGame/'
+
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory(base),
   routes
 })
 

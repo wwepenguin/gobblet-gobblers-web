@@ -4,7 +4,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/GGame/',
+  base: './',
   server:{
     host:'0.0.0.0',
   },

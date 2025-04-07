@@ -183,6 +183,29 @@ const getSizeValue = (size: string): number => {
   margin: 4px;
 }
 
+/* 移動設備上的棋盤調整 */
+@media (max-width: 768px) {
+  .board-cell {
+    width: 90px;
+    height: 90px;
+    margin: 3px;
+  }
+}
+
+/* 小屏幕上的棋盤調整 */
+@media (max-width: 480px) {
+  .board-cell {
+    width: 75px;
+    height: 75px;
+    margin: 2px;
+  }
+  
+  .cell-empty {
+    width: 15px;
+    height: 15px;
+  }
+}
+
 .board-cell:hover {
   background-color: #f9f9f9;
 }

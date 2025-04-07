@@ -91,6 +91,42 @@ const handleClick = () => {
   z-index: 3;
 }
 
+/* 移動設備上的棋子尺寸調整 */
+@media (max-width: 768px) {
+  .size-small {
+    width: 35px;
+    height: 35px;
+  }
+  
+  .size-medium {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .size-large {
+    width: 70px;
+    height: 70px;
+  }
+}
+
+/* 小屏幕上的棋子尺寸調整 */
+@media (max-width: 480px) {
+  .size-small {
+    width: 30px;
+    height: 30px;
+  }
+  
+  .size-medium {
+    width: 45px;
+    height: 45px;
+  }
+  
+  .size-large {
+    width: 60px;
+    height: 60px;
+  }
+}
+
 /* 可選擇狀態 */
 .selectable {
   cursor: pointer;

@@ -152,4 +152,49 @@ const isSelected = (size: PieceSize): boolean => {
   background-color: #ddd;
   border-radius: 30px;
 }
+
+/* 移動設備上的手牌調整 */
+@media (max-width: 768px) {
+  .player-hand {
+    width: 100%;
+    padding: 15px;
+    flex-direction: row;
+    justify-content: space-around;
+    max-width: 500px;
+  }
+  
+  .player-info {
+    margin-bottom: 0;
+    margin-right: 15px;
+  }
+  
+  .pieces-container {
+    flex-direction: row;
+    gap: 15px;
+  }
+  
+  .piece-slot {
+    height: auto;
+  }
+}
+
+/* 小屏幕上的手牌調整 */
+@media (max-width: 480px) {
+  .player-hand {
+    padding: 10px;
+  }
+  
+  .player-avatar {
+    width: 30px;
+    height: 30px;
+  }
+  
+  .player-name {
+    font-size: 0.9rem;
+  }
+  
+  .pieces-container {
+    gap: 10px;
+  }
+}
 </style> 

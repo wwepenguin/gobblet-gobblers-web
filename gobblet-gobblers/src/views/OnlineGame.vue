@@ -223,38 +223,46 @@ onBeforeUnmount(() => {
 .online-game-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 1rem;
 }
 
 .game-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .game-header h1 {
   color: #4a55a2;
   margin: 0;
+  font-size: clamp(1.2rem, 5vw, 2rem);
 }
 
 .controls {
   display: flex;
-  gap: 1rem;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .control-button {
-  background-color: #f0f0f0;
+  background-color: #4a55a2;
+  color: white;
   border: none;
   padding: 0.5rem 1rem;
   border-radius: 6px;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .control-button:hover {
-  background-color: #e0e0e0;
+  background-color: #394280;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .connection-panel {
@@ -291,23 +299,28 @@ onBeforeUnmount(() => {
 }
 
 .action-button {
-  background-color: #4a55a2;
+  background: linear-gradient(135deg, #4a55a2, #394280);
   color: white;
   border: none;
   border-radius: 6px;
   padding: 0.75rem 1.5rem;
   font-size: 1rem;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.3s ease;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
 }
 
 .action-button:hover {
-  background-color: #394280;
+  background: linear-gradient(135deg, #394280, #2e355e);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
 }
 
 .action-button:disabled {
-  background-color: #cccccc;
+  background: linear-gradient(135deg, #cccccc, #aaaaaa);
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .peer-id-display {
@@ -404,18 +417,71 @@ onBeforeUnmount(() => {
 }
 
 .cancel-button {
-  background-color: #e74c3c;
+  background: linear-gradient(135deg, #e74c3c, #c0392b);
   color: white;
   border: none;
   border-radius: 6px;
   padding: 0.75rem 1.5rem;
   font-size: 1rem;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.3s ease;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
   margin-top: 1rem;
 }
 
 .cancel-button:hover {
-  background-color: #c0392b;
+  background: linear-gradient(135deg, #c0392b, #a33225);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* 移動設備上的布局調整 */
+@media (max-width: 768px) {
+  .game-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  
+  .connection-options {
+    flex-direction: column;
+  }
+  
+  .divider {
+    width: 80%;
+    height: 1px;
+    margin: 1.5rem 0;
+  }
+  
+  .game-area {
+    flex-direction: column;
+    gap: 2rem;
+  }
+  
+  .board-container {
+    order: -1; /* 棋盤放在中間 */
+  }
+}
+
+/* 小屏幕上的布局調整 */
+@media (max-width: 480px) {
+  .online-game-container {
+    padding: 0.5rem;
+  }
+  
+  .connection-panel {
+    padding: 1rem;
+  }
+  
+  .peer-id {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .peer-id span {
+    width: 100%;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
 }
 </style> 

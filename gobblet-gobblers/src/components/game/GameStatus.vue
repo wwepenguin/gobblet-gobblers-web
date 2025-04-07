@@ -95,6 +95,14 @@ onMounted(() => {
   justify-content: center;
 }
 
+.status-playing {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.8rem;
+}
+
 .player-indicator {
   width: 20px;
   height: 20px;
@@ -149,18 +157,21 @@ onMounted(() => {
 }
 
 .restart-button {
-  background-color: #4a55a2;
+  background: linear-gradient(135deg, #4a55a2, #394280);
   color: white;
   border: none;
   border-radius: 6px;
   padding: 8px 16px;
   font-size: 1rem;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.3s ease;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
 }
 
 .restart-button:hover {
-  background-color: #394280;
+  background: linear-gradient(135deg, #394280, #2e355e);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
 }
 
 .online-status {
@@ -183,5 +194,30 @@ onMounted(() => {
 .online-status.disconnected {
   background-color: #ffebee;
   color: #c62828;
+}
+
+/* 移動設備上的狀態顯示調整 */
+@media (max-width: 768px) {
+  .game-status {
+    padding: 12px 16px;
+  }
+  
+  .game-start-tip {
+    margin-left: 0;
+    margin-top: 0.5rem;
+    width: 100%;
+  }
+  
+  .online-status {
+    margin-left: 0;
+    margin-top: 0.5rem;
+  }
+}
+
+/* 小屏幕上的狀態顯示調整 */
+@media (max-width: 480px) {
+  .status-win, .status-draw {
+    padding: 0.5rem;
+  }
 }
 </style> 

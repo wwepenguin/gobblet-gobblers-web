@@ -1,10 +1,5 @@
 <template>
   <div class="home-container">
-    <div class="game-title">
-      <h1>Gobblet Gobblers</h1>
-      <p>經典的策略遊戲，現在可在線上遊玩！</p>
-    </div>
-    
     <div class="game-modes">
       <div class="mode-card" @click="goToSinglePlayer">
         <div class="mode-icon">

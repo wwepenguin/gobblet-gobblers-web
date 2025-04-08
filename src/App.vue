@@ -39,9 +39,6 @@ function updateServiceWorker() {
     <main class="main-content">
       <router-view />
     </main>
-    <footer class="footer">
-      <p>&copy; 2023 Gobblet Gobblers</p>
-    </footer>
 
     <!-- PWA 更新提示 -->
     <div v-if="offlineReady" class="pwa-toast" role="alert">
@@ -76,6 +73,7 @@ function updateServiceWorker() {
   min-height: 100vh;
   background-color: #f5f5f5;
   font-family: 'Nunito', sans-serif;
+  width: 100%;
 }
 
 .header {
@@ -89,7 +87,6 @@ function updateServiceWorker() {
 .main-content {
   flex: 1;
   padding: 2rem;
-  max-width: 1200px;
   width: 100%;
   margin: 0 auto;
 }

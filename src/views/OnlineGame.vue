@@ -1,7 +1,7 @@
 <template>
   <div class="online-game-container">
     <div class="game-header">
-      <h1>Gobblet Gobblers - 線上對戰</h1>
+      <!-- <h1>Gobblet Gobblers - 線上對戰</h1> -->
       <div class="controls">
         <button class="control-button" @click="resetGame">重新開始</button>
         <button class="control-button" @click="disconnect">斷開連接</button>

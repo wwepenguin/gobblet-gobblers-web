@@ -19,12 +19,12 @@
       <PlayerHand player="player2" />
     </div>
     
-    <div class="game-instructions">
+    <!-- <div class="game-instructions">
       <h3>如何遊玩</h3>
       <p>1. 點擊你的棋子並放置在棋盤上</p>
       <p>2. 大的棋子可以蓋住小的棋子</p>
       <p>3. 將三個棋子連成一直線(橫、豎或對角線)獲勝</p>
-    </div>
+    </div> -->
   </div>
 </template>
 
@@ -75,9 +75,14 @@ const handleResetGame = () => {
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
 }
 
 .control-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   background-color: #4a55a2;
   color: white;
   border: none;

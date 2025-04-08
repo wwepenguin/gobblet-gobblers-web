@@ -160,7 +160,7 @@ const getSizeValue = (size: string): number => {
   flex-direction: column;
   background-color: #f0f0f0;
   border-radius: 12px;
-  padding: 15px;
+  /* padding: 15px; */
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
 }
 

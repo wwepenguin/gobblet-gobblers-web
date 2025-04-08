@@ -3,22 +3,69 @@ import Peer from 'peerjs'
 import type { OnlineGameState, PlayerType } from '../types/game'
 import { gameStore, resetGame, placePiece, selectPiece } from './gameStore'
 
+// 擴展連線狀態類型
+export type ConnectionStatus = 
+  | 'disconnected' 
+  | 'initializing' 
+  | 'waiting' 
+  | 'connecting' 
+  | 'connected' 
+  | 'error';
+
+// 連線日誌項目類型
+export interface ConnectionLogItem {
+  time: Date;
+  message: string;
+  type: 'info' | 'error' | 'success';
+}
+
 // 創建初始線上遊戲狀態
-const createInitialOnlineState = (): OnlineGameState => {
+const createInitialOnlineState = (): OnlineGameState & { 
+  connectionStatus: ConnectionStatus,
+  connectionError: string,
+  connectionLogs: ConnectionLogItem[]
+} => {
   return {
     ...gameStore,
     peerId: '',
     connectionId: null,
     isHost: false,
-    connectionStatus: 'disconnected'
+    connectionStatus: 'disconnected',
+    connectionError: '',
+    connectionLogs: []
   }
 }
 
 // 創建線上遊戲存儲
-export const onlineStore = reactive<OnlineGameState>(createInitialOnlineState())
+export const onlineStore = reactive<OnlineGameState & { 
+  connectionStatus: ConnectionStatus,
+  connectionError: string,
+  connectionLogs: ConnectionLogItem[]
+}>(createInitialOnlineState())
 
 let peer: Peer | null = null
 let connection: any = null
+
+// 添加連線日誌
+const addConnectionLog = (message: string, type: 'info' | 'error' | 'success' = 'info') => {
+  onlineStore.connectionLogs.unshift({
+    time: new Date(),
+    message,
+    type
+  });
+  
+  // 限制日誌數量為最新的20條
+  if (onlineStore.connectionLogs.length > 20) {
+    onlineStore.connectionLogs.pop();
+  }
+  
+  console.log(`[${type.toUpperCase()}] ${message}`);
+}
+
+// 清空連線日誌
+export const clearConnectionLogs = () => {
+  onlineStore.connectionLogs = [];
+}
 
 // 初始化 PeerJS
 export const initPeer = () => {
@@ -26,6 +73,10 @@ export const initPeer = () => {
     resetGame()
     
     try {
+      addConnectionLog('初始化連線中...', 'info');
+      onlineStore.connectionStatus = 'initializing';
+      onlineStore.connectionError = '';
+      
       console.log('初始化 Peer...')
       peer = new Peer({
         config: {
@@ -40,20 +91,31 @@ export const initPeer = () => {
         console.log('Peer 打開連接，ID:', id)
         onlineStore.peerId = id
         onlineStore.isHost = true
-        onlineStore.connectionStatus = 'connecting'
+        onlineStore.connectionStatus = 'waiting'
+        addConnectionLog(`已取得連線 ID: ${id}，等待對手連線...`, 'success');
         console.log('Store 中的 peerId:', onlineStore.peerId)
         resolve(id)
       })
       
       peer.on('error', (error) => {
         console.error('PeerJS 錯誤:', error)
+        onlineStore.connectionStatus = 'error';
+        onlineStore.connectionError = error.message || '連線失敗';
+        addConnectionLog(`連線錯誤: ${error.message || '未知錯誤'}`, 'error');
         reject(error)
       })
       
       peer.on('connection', (conn) => {
+        console.log('連接到:', conn.peer)
         connection = conn
         onlineStore.connectionId = conn.peer
-        onlineStore.connectionStatus = 'connected'
+        onlineStore.connectionStatus = 'connecting'
+        addConnectionLog(`對手 ${conn.peer} 嘗試連線...`, 'info');
+        
+        conn.on('open', () => {
+          onlineStore.connectionStatus = 'connected';
+          addConnectionLog(`與對手 ${conn.peer} 連線成功！`, 'success');
+        });
         
         conn.on('data', (data: unknown) => {
           handleDataReceived(data)
@@ -63,10 +125,20 @@ export const initPeer = () => {
           onlineStore.connectionStatus = 'disconnected'
           onlineStore.connectionId = null
           connection = null
+          addConnectionLog('對手已斷開連線', 'info');
         })
+        
+        conn.on('error', (err: any) => {
+          onlineStore.connectionStatus = 'error';
+          onlineStore.connectionError = err.message || '連線過程中發生錯誤';
+          addConnectionLog(`連線錯誤: ${err.message || '未知錯誤'}`, 'error');
+        });
       })
-    } catch (error) {
+    } catch (error: any) {
       console.error('初始化 Peer 時出錯:', error)
+      onlineStore.connectionStatus = 'error';
+      onlineStore.connectionError = error.message || '初始化失敗';
+      addConnectionLog(`初始化錯誤: ${error.message || '未知錯誤'}`, 'error');
       reject(error)
     }
   })
@@ -76,18 +148,22 @@ export const initPeer = () => {
 export const connectToPeer = (peerId: string) => {
   if (!peer) {
     console.error('PeerJS 尚未初始化')
+    addConnectionLog('連接失敗：PeerJS 尚未初始化', 'error');
     return
   }
   
   resetGame()
   onlineStore.isHost = false
+  onlineStore.connectionStatus = 'connecting'
+  onlineStore.connectionError = '';
+  addConnectionLog(`正在連接到對手 ${peerId}...`, 'info');
   
   connection = peer.connect(peerId)
-  onlineStore.connectionStatus = 'connecting'
   
   connection.on('open', () => {
     onlineStore.connectionId = peerId
     onlineStore.connectionStatus = 'connected'
+    addConnectionLog(`已成功連接到對手 ${peerId}！`, 'success');
     // 連接後發送準備就緒消息
     sendData({ type: 'ready' })
   })
@@ -100,7 +176,14 @@ export const connectToPeer = (peerId: string) => {
     onlineStore.connectionStatus = 'disconnected'
     onlineStore.connectionId = null
     connection = null
+    addConnectionLog('對手已斷開連線', 'info');
   })
+  
+  connection.on('error', (err: any) => {
+    onlineStore.connectionStatus = 'error';
+    onlineStore.connectionError = err.message || '連線過程中發生錯誤';
+    addConnectionLog(`連線錯誤: ${err.message || '未知錯誤'}`, 'error');
+  });
 }
 
 // 斷開連接
@@ -114,6 +197,7 @@ export const disconnect = () => {
     peer = null
   }
   
+  addConnectionLog('已斷開連線', 'info');
   resetOnlineStore()
 }
 
@@ -121,7 +205,10 @@ export const disconnect = () => {
 export const resetOnlineStore = () => {
   resetGame()
   const initialState = createInitialOnlineState()
+  // 保留連線日誌
+  const logs = [...onlineStore.connectionLogs];
   Object.assign(onlineStore, initialState)
+  onlineStore.connectionLogs = logs;
 }
 
 // 發送資料

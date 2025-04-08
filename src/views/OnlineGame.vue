@@ -9,6 +9,17 @@
       </div>
     </div>
     
+    <!-- 連線狀態顯示 -->
+    <div class="connection-status-banner" :class="connectionStatus">
+      <div class="status-icon"></div>
+      <span class="status-text">{{ connectionStatusMessage }}</span>
+    </div>
+    
+    <!-- 連線錯誤顯示 -->
+    <div v-if="connectionStatus === 'error'" class="error-message">
+      {{ onlineStore.connectionError }}
+    </div>
+    
     <!-- 未連接狀態 - 顯示創建/加入遊戲選項 -->
     <div v-if="connectionStatus === 'disconnected'" class="connection-panel">
       <div class="connection-options">
@@ -46,12 +57,28 @@
           </div>
         </div>
       </div>
+      
+      <!-- 連線日誌顯示 -->
+      <div class="connection-logs">
+        <h4>連線日誌</h4>
+        <button class="small-button" @click="clearLogs">清除</button>
+        <div class="logs-container">
+          <div v-for="(log, index) in onlineStore.connectionLogs" :key="index" 
+               class="log-item" :class="log.type">
+            <span class="log-time">{{ formatTime(log.time) }}</span>
+            <span class="log-message">{{ log.message }}</span>
+          </div>
+          <div v-if="onlineStore.connectionLogs.length === 0" class="no-logs">
+            沒有連線記錄
+          </div>
+        </div>
+      </div>
     </div>
     
     <!-- 連接中狀態 - 顯示等待玩家連接 -->
-    <div v-else-if="connectionStatus === 'connecting'" class="connection-panel">
+    <div v-else-if="['initializing', 'waiting', 'connecting'].includes(connectionStatus)" class="connection-panel">
       <div class="waiting-panel">
-        <h2>等待玩家連接...</h2>
+        <h2>{{ connectionStatusMessage }}</h2>
         <div class="loader"></div>
         
         <div class="peer-id-display" v-if="isHost && peerId">
@@ -63,6 +90,19 @@
         </div>
         
         <button class="cancel-button" @click="disconnect">取消</button>
+      </div>
+      
+      <!-- 連線日誌顯示 -->
+      <div class="connection-logs">
+        <h4>連線日誌</h4>
+        <button class="small-button" @click="clearLogs">清除</button>
+        <div class="logs-container">
+          <div v-for="(log, index) in onlineStore.connectionLogs" :key="index" 
+               class="log-item" :class="log.type">
+            <span class="log-time">{{ formatTime(log.time) }}</span>
+            <span class="log-message">{{ log.message }}</span>
+          </div>
+        </div>
       </div>
     </div>
     
@@ -98,6 +138,22 @@
           :is-my-turn="isMyTurn && getPlayerRole === 'player2'"
         />
       </div>
+      
+      <!-- 簡潔的連線資訊 -->
+      <div class="connection-info">
+        <div class="info-item">
+          <span class="label">遊戲角色：</span>
+          <span class="value">{{ getPlayerRole === 'player1' ? '玩家 1 (主機)' : '玩家 2 (加入者)' }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">遊戲 ID：</span>
+          <span class="value">{{ peerId }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">連線 ID：</span>
+          <span class="value">{{ onlineStore.connectionId }}</span>
+        </div>
+      </div>
     </template>
   </div>
 </template>
@@ -115,20 +171,56 @@ import {
   sendMove as sendMoveAction,
   sendSelect as sendSelectAction,
   sendReset as sendResetAction,
+  clearConnectionLogs,
   onlineStore,
   getPlayerRole as getRole,
   isMyTurn as checkMyTurn,
 } from '../stores/onlineStore'
 import { resetGame } from '../stores/gameStore'
+import type { ConnectionStatus } from '../types/game'
 
 const router = useRouter()
 const connectId = ref('')
 const peerId = computed(() => onlineStore.peerId)
-const connectionStatus = computed(() => onlineStore.connectionStatus)
+const connectionStatus = computed(() => onlineStore.connectionStatus as ConnectionStatus)
 const isHost = computed(() => onlineStore.isHost)
 const getPlayerRole = computed(() => getRole())
 const isMyTurn = computed(() => checkMyTurn())
 const startTipKey = ref(0)
+
+// 格式化時間
+const formatTime = (date: Date) => {
+  return date.toLocaleTimeString('zh-TW', { 
+    hour: '2-digit', 
+    minute: '2-digit',
+    second: '2-digit'
+  });
+}
+
+// 清除連線日誌
+const clearLogs = () => {
+  clearConnectionLogs();
+}
+
+// 連線狀態訊息
+const connectionStatusMessage = computed(() => {
+  switch (connectionStatus.value) {
+    case 'disconnected':
+      return '未連線';
+    case 'initializing':
+      return '初始化連線中...';
+    case 'waiting':
+      return '等待對手連線...';
+    case 'connecting':
+      return '正在建立連線...';
+    case 'connected':
+      return '連線成功，遊戲進行中';
+    case 'error':
+      return '連線錯誤';
+    default:
+      return '未知狀態';
+  }
+});
 
 // 創建遊戲
 const createGame = async () => {
@@ -141,7 +233,6 @@ const createGame = async () => {
     }
   } catch (error) {
     console.error('初始化 Peer 出錯:', error)
-    alert('創建遊戲失敗，請重試')
   }
 }
 
@@ -473,6 +564,197 @@ onBeforeUnmount(() => {
     width: 100%;
     overflow-x: auto;
     white-space: nowrap;
+  }
+}
+
+/* 連線狀態橫幅 */
+.connection-status-banner {
+  padding: 10px 15px;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+.connection-status-banner .status-icon {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 10px;
+}
+
+.connection-status-banner .status-text {
+  font-weight: 500;
+}
+
+/* 不同連線狀態的樣式 */
+.connection-status-banner.disconnected {
+  background-color: #f0f0f0;
+  color: #666;
+}
+
+.connection-status-banner.disconnected .status-icon {
+  background-color: #aaa;
+}
+
+.connection-status-banner.initializing,
+.connection-status-banner.waiting,
+.connection-status-banner.connecting {
+  background-color: #fff8e1;
+  color: #f57c00;
+}
+
+.connection-status-banner.initializing .status-icon,
+.connection-status-banner.waiting .status-icon,
+.connection-status-banner.connecting .status-icon {
+  background-color: #ffa000;
+  animation: pulse 1.5s infinite;
+}
+
+.connection-status-banner.connected {
+  background-color: #e6f7e6;
+  color: #2e7d32;
+}
+
+.connection-status-banner.connected .status-icon {
+  background-color: #4caf50;
+}
+
+.connection-status-banner.error {
+  background-color: #ffebee;
+  color: #c62828;
+}
+
+.connection-status-banner.error .status-icon {
+  background-color: #f44336;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
+/* 錯誤訊息 */
+.error-message {
+  background-color: #ffebee;
+  color: #c62828;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  border-left: 4px solid #f44336;
+}
+
+/* 連線日誌 */
+.connection-logs {
+  margin-top: 2rem;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+.connection-logs h4 {
+  margin: 0 0 10px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.small-button {
+  font-size: 0.8rem;
+  padding: 3px 8px;
+  background-color: #eee;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.logs-container {
+  max-height: 250px;
+  overflow-y: auto;
+  font-family: monospace;
+  font-size: 0.9rem;
+  background-color: #fcfcfc;
+  border: 1px solid #eee;
+  border-radius: 4px;
+  padding: 8px;
+}
+
+.log-item {
+  margin-bottom: 5px;
+  padding: 5px;
+  border-radius: 4px;
+  display: flex;
+}
+
+.log-item.info {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+.log-item.success {
+  background-color: rgba(76, 175, 80, 0.1);
+}
+
+.log-item.error {
+  background-color: rgba(244, 67, 54, 0.1);
+}
+
+.log-time {
+  color: #666;
+  margin-right: 10px;
+  white-space: nowrap;
+}
+
+.log-message {
+  flex: 1;
+}
+
+.no-logs {
+  color: #999;
+  text-align: center;
+  padding: 20px;
+}
+
+/* 連線信息顯示 */
+.connection-info {
+  background-color: #f5f5f5;
+  padding: 15px;
+  border-radius: 8px;
+  margin-top: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  font-size: 0.9rem;
+}
+
+.info-item {
+  margin: 5px 10px;
+}
+
+.info-item .label {
+  font-weight: 600;
+  color: #555;
+}
+
+.info-item .value {
+  margin-left: 5px;
+  color: #4a55a2;
+}
+
+/* 小屏幕樣式調整 */
+@media (max-width: 768px) {
+  .connection-logs {
+    margin-top: 1rem;
+    padding: 0.5rem;
+  }
+  
+  .logs-container {
+    max-height: 150px;
+  }
+  
+  .connection-info {
+    flex-direction: column;
   }
 }
 </style> 

@@ -33,10 +33,11 @@
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue'
 import { gameStore } from '../../stores/gameStore'
+import type { ConnectionStatus } from '../../types/game'
 
 const props = defineProps<{
   online?: boolean
-  connectionStatus?: 'disconnected' | 'connecting' | 'connected'
+  connectionStatus?: ConnectionStatus
   isHost?: boolean
 }>()
 
@@ -64,9 +65,15 @@ const connectionMessage = computed(() => {
     case 'connected':
       return '已連接'
     case 'connecting':
-      return '等待對手...'
+      return '正在連線中...'
+    case 'waiting':
+      return '等待對手連線...'
+    case 'initializing':
+      return '初始化連線...'
     case 'disconnected':
       return '未連接'
+    case 'error':
+      return '連線錯誤'
     default:
       return ''
   }
@@ -186,7 +193,9 @@ onMounted(() => {
   color: #2e7d32;
 }
 
-.online-status.connecting {
+.online-status.connecting,
+.online-status.waiting, 
+.online-status.initializing {
   background-color: #fff8e1;
   color: #f57c00;
 }
@@ -194,6 +203,13 @@ onMounted(() => {
 .online-status.disconnected {
   background-color: #ffebee;
   color: #c62828;
+}
+
+.online-status.error {
+  background-color: #ffebee;
+  color: #c62828;
+  border-left: 3px solid #f44336;
+  font-weight: bold;
 }
 
 /* 移動設備上的狀態顯示調整 */

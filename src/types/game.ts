@@ -1,5 +1,12 @@
 export type PieceSize = 'small' | 'medium' | 'large';
 export type PlayerType = 'player1' | 'player2';
+export type ConnectionStatus = 'disconnected' | 'initializing' | 'waiting' | 'connecting' | 'connected' | 'error';
+
+export interface ConnectionLogItem {
+  time: Date;
+  message: string;
+  type: 'info' | 'error' | 'success';
+}
 
 export interface GamePiece {
   id: string;
@@ -51,5 +58,7 @@ export interface OnlineGameState extends GameState {
   peerId: string;
   connectionId: string | null;
   isHost: boolean;
-  connectionStatus: 'disconnected' | 'connecting' | 'connected';
+  connectionStatus: ConnectionStatus;
+  connectionError?: string;
+  connectionLogs?: ConnectionLogItem[];
 } 

@@ -29,7 +29,8 @@ const router = createRouter({
   history: createWebHistory('gobblet-gobblers-web'),
   routes
 })
-
 const app = createApp(App)
 app.use(router)
 app.mount('#app')
+
+

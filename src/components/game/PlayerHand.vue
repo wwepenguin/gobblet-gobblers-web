@@ -161,8 +161,6 @@ const isSelected = (size: PieceSize): boolean => {
   width: 100%;
   padding: 8px 0;
   overflow: visible;
-  /* 確保容器能夠適應內容 */
-  min-height: 240px;
   height: auto;
 }
 

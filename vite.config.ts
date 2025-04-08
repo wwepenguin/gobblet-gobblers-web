@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { VitePWA } from 'vite-plugin-pwa'
 import VueDevTools from 'vite-plugin-vue-devtools'
+import { version } from './package.json'
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -45,4 +46,8 @@ export default defineConfig({
       }
     })
   ],
+  define: {
+    __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+    __APP_VERSION__: JSON.stringify(version || '0.0.0')
+  }
 })

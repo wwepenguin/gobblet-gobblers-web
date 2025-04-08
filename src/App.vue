@@ -1,6 +1,13 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { registerSW } from 'virtual:pwa-register';
+
+// 取得應用版本號和編譯時間
+const appVersion = __APP_VERSION__;
+const buildTime = computed(() => {
+  const buildDate = new Date(__BUILD_TIME__);
+  return buildDate.toLocaleString('zh-TW');
+});
 
 const updateSW = registerSW({
   onNeedRefresh() {
@@ -39,6 +46,11 @@ function updateServiceWorker() {
     <main class="main-content">
       <router-view />
     </main>
+
+    <!-- 版本號和編譯時間顯示 -->
+    <div class="version-info">
+      <span>版本: {{ appVersion }} (編譯時間: {{ buildTime }})</span>
+    </div>
 
     <!-- PWA 更新提示 -->
     <div v-if="offlineReady" class="pwa-toast" role="alert">
@@ -162,6 +174,16 @@ function updateServiceWorker() {
 
 .close-button:hover {
   background: rgba(255, 255, 255, 0.3);
+}
+
+.version-info {
+  position: fixed;
+  bottom: 5px;
+  left: 10px;
+  font-size: 0.7rem;
+  opacity: 0.7;
+  color: #666;
+  z-index: 50;
 }
 
 @media (max-width: 600px) {

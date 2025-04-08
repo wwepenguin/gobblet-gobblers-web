@@ -101,7 +101,7 @@ const handleResetGame = () => {
 
 .game-area {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   margin: 2rem 0;
 

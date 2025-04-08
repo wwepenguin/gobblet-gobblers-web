@@ -12,7 +12,7 @@
             v-for="i in count" 
             :key="`${player}-${size}-${i}`" 
             :piece="createPiece(size as PieceSize, player)" 
-            :style="{ marginTop: `${(i-1) * -15}px` }"
+            :style="getStackStyle(i, count, size)"
             :selectable="isSelectable"
             :selected="isSelected(size as PieceSize)"
             @select="handleSelectPiece(size as PieceSize)"
@@ -49,6 +49,31 @@ const isSelectable = computed(() => {
   }
   return gameStore.currentPlayer === props.player
 })
+
+// 獲取堆疊樣式，考慮不同尺寸
+const getStackStyle = (index: number, count: number, size: string) => {
+  const isMobile = window.innerWidth <= 768
+  const isSmallScreen = window.innerWidth <= 480
+  
+  // 根據棋子大小和螢幕尺寸調整堆疊間距
+  let marginTop, offset
+  
+  // 根據不同棋子尺寸調整堆疊間距
+  if (size === 'large') {
+    offset = isSmallScreen ? -9 : (isMobile ? -11 : -13)
+  } else if (size === 'medium') {
+    offset = isSmallScreen ? -7 : (isMobile ? -9 : -11)
+  } else { // small
+    offset = isSmallScreen ? -5 : (isMobile ? -7 : -9)
+  }
+  
+  marginTop = `${(index-1) * offset}px` // 根據棋子大小調整間距
+  
+  return {
+    marginTop,
+    zIndex: count - index + 1 // 確保正確的堆疊順序
+  }
+}
 
 // 選擇手中的棋子
 const handleSelectPiece = (size: PieceSize) => {
@@ -89,6 +114,7 @@ const isSelected = (size: PieceSize): boolean => {
   transition: all 0.3s ease;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
   opacity: 0.8;
+  overflow: visible;
 }
 
 .player-hand.active {
@@ -110,6 +136,7 @@ const isSelected = (size: PieceSize): boolean => {
   display: flex;
   align-items: center;
   justify-content: center;
+  aspect-ratio: 1 / 1;
 }
 
 .player-player1 {
@@ -128,15 +155,26 @@ const isSelected = (size: PieceSize): boolean => {
 .pieces-container {
   display: flex;
   flex-direction: column;
-  gap: 30px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 25px;
   width: 100%;
+  padding: 8px 0;
+  overflow: visible;
+  /* 確保容器能夠適應內容 */
+  min-height: 240px;
+  height: auto;
 }
 
 .piece-slot {
   display: flex;
   justify-content: center;
-  height: 80px;
+  min-height: 90px;
+  height: auto;
   position: relative;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  overflow: visible;
 }
 
 .piece-stack {
@@ -144,6 +182,8 @@ const isSelected = (size: PieceSize): boolean => {
   flex-direction: column;
   align-items: center;
   position: relative;
+  min-height: 80px;
+  height: auto;
 }
 
 .empty-slot {
@@ -151,6 +191,7 @@ const isSelected = (size: PieceSize): boolean => {
   height: 15px;
   background-color: #ddd;
   border-radius: 30px;
+  aspect-ratio: 4 / 1;
 }
 
 /* 移動設備上的手牌調整 */
@@ -160,21 +201,32 @@ const isSelected = (size: PieceSize): boolean => {
     padding: 15px;
     flex-direction: row;
     justify-content: space-around;
-    max-width: 500px;
+    max-width: 400px;
   }
   
   .player-info {
     margin-bottom: 0;
     margin-right: 15px;
+    min-width: 80px;
   }
   
   .pieces-container {
     flex-direction: row;
     gap: 15px;
+    justify-content: flex-start;
   }
   
   .piece-slot {
     height: auto;
+    min-height: 80px;
+    padding: 8px 0;
+    width: 80px;
+  }
+  
+  .piece-stack {
+    min-height: 70px;
+    height: auto;
+    width: 100%;
   }
 }
 
@@ -182,11 +234,18 @@ const isSelected = (size: PieceSize): boolean => {
 @media (max-width: 480px) {
   .player-hand {
     padding: 10px;
+    max-width: 340px;
+  }
+  
+  .player-info {
+    min-width: 60px;
+    margin-right: 10px;
   }
   
   .player-avatar {
     width: 30px;
     height: 30px;
+    aspect-ratio: 1 / 1;
   }
   
   .player-name {
@@ -194,7 +253,18 @@ const isSelected = (size: PieceSize): boolean => {
   }
   
   .pieces-container {
-    gap: 10px;
+    gap: 8px;
+  }
+  
+  .piece-slot {
+    width: 70px;
+    min-height: 70px;
+    padding: 6px 0;
+  }
+  
+  .piece-stack {
+    min-height: 60px;
+    height: auto;
   }
 }
 </style> 

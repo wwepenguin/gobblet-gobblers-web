@@ -181,6 +181,7 @@ const getSizeValue = (size: string): number => {
   transition: all 0.2s ease;
   border-radius: 4px;
   margin: 4px;
+  aspect-ratio: 1 / 1;
 }
 
 /* 移動設備上的棋盤調整 */
@@ -189,6 +190,7 @@ const getSizeValue = (size: string): number => {
     width: 90px;
     height: 90px;
     margin: 3px;
+    aspect-ratio: 1 / 1;
   }
 }
 
@@ -198,11 +200,13 @@ const getSizeValue = (size: string): number => {
     width: 75px;
     height: 75px;
     margin: 2px;
+    aspect-ratio: 1 / 1;
   }
   
   .cell-empty {
     width: 15px;
     height: 15px;
+    aspect-ratio: 1 / 1;
   }
 }
 
@@ -220,6 +224,7 @@ const getSizeValue = (size: string): number => {
   height: 20px;
   border-radius: 50%;
   background-color: #eee;
+  aspect-ratio: 1 / 1;
 }
 
 .piece-container {

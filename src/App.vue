@@ -34,7 +34,7 @@ function updateServiceWorker() {
 <template>
   <div class="app-container">
     <header class="header">
-      <h1>Gobblet Gobblers</h1>
+      <h2>Gobblet Gobblers</h2>
     </header>
     <main class="main-content">
       <router-view />
@@ -79,9 +79,9 @@ function updateServiceWorker() {
 .header {
   background-color: #4a55a2;
   color: white;
-  padding: 1rem 2rem;
   text-align: center;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  font-size: 1.3rem;
 }
 
 .main-content {

@@ -24,7 +24,6 @@
     <div v-if="connectionStatus === 'disconnected'" class="connection-panel">
       <div class="connection-options">
         <div class="connection-option">
-          <h3>創建遊戲</h3>
           <button class="action-button" @click="createGame">創建遊戲</button>
           <div v-if="peerId" class="peer-id-display">
             <p>遊戲 ID：({{ peerId }})</p>
@@ -358,6 +357,7 @@ onBeforeUnmount(() => {
 .connection-options {
   display: flex;
   justify-content: space-around;
+  align-items: center;
 }
 
 .connection-option {

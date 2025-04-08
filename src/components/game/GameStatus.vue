@@ -92,8 +92,8 @@ onMounted(() => {
 .game-status {
   background-color: white;
   border-radius: 12px;
-  /* padding: 8px 10px; */
-  margin: 10px 0;
+  padding: 16px 24px;
+  margin: 20px 0;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   text-align: center;
   min-height: 60px;
@@ -215,7 +215,7 @@ onMounted(() => {
 /* 移動設備上的狀態顯示調整 */
 @media (max-width: 768px) {
   .game-status {
-    /* padding: 12px 16px; */
+    padding: 12px 16px;
   }
   
   .game-start-tip {

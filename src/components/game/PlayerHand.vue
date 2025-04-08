@@ -83,7 +83,7 @@ const isSelected = (size: PieceSize): boolean => {
   flex-direction: column;
   align-items: center;
   border-radius: 12px;
-  /* padding: 20px; */
+  padding: 20px;
   background-color: #f9f9f9;
   width: 180px;
   transition: all 0.3s ease;
@@ -157,7 +157,7 @@ const isSelected = (size: PieceSize): boolean => {
 @media (max-width: 768px) {
   .player-hand {
     width: 100%;
-    /* padding: 15px; */
+    padding: 15px;
     flex-direction: row;
     justify-content: space-around;
     max-width: 500px;
@@ -181,7 +181,7 @@ const isSelected = (size: PieceSize): boolean => {
 /* 小屏幕上的手牌調整 */
 @media (max-width: 480px) {
   .player-hand {
-    /* padding: 10px; */
+    padding: 10px;
   }
   
   .player-avatar {

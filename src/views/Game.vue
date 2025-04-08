@@ -60,7 +60,7 @@ const handleResetGame = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.1rem;
+  margin-bottom: 1.5rem;
   flex-wrap: wrap;
   gap: 1rem;
 }

@@ -55,9 +55,9 @@ const startHeartbeat = () => {
   if (heartbeatInterval) {
     clearInterval(heartbeatInterval);
   }
-  
+
   lastHeartbeatResponse = Date.now();
-  
+
   // 每10秒發送一次心跳
   heartbeatInterval = setInterval(() => {
     if (!connection || onlineStore.connectionStatus !== 'connected') {
@@ -65,14 +65,14 @@ const startHeartbeat = () => {
       heartbeatInterval = null;
       return;
     }
-    
+
     // 檢查上次心跳回應時間，如果超過30秒沒回應，視為連線問題
     const now = Date.now();
     if (now - lastHeartbeatResponse > 30000) {
       addConnectionLog('警告：已超過30秒未收到對方回應，連線可能有問題', 'error');
       // 不立即斷開，但顯示警告
     }
-    
+
     // 發送心跳
     sendData({
       type: 'heartbeat',
@@ -127,7 +127,11 @@ export const initPeer = () => {
             { urls: 'stun:stun.l.google.com:19302' },
             { urls: 'stun:stun1.l.google.com:19302' },
             { urls: 'stun:stun2.l.google.com:19302' },
-            { urls: 'stun:global.stun.twilio.com:3478?transport=udp' }
+            {
+              url: 'turn:numb.viagenie.ca',
+              credential: 'muazkh',
+              username: 'webrtc@live.com'
+            },
           ]
         },
         debug: 3 // 設定更詳細的除錯資訊 (0-3)
@@ -276,14 +280,14 @@ const sendData = (data: any) => {
       ...data,
       timestamp: new Date().getTime()
     };
-    
+
     connection.send(dataWithTimestamp);
-    
+
     // 記錄發送的動作到日誌（只記錄關鍵操作）
     if (data.type === 'move' || data.type === 'select' || data.type === 'reset') {
       addConnectionLog(`發送 ${getActionName(data.type)} 動作`, 'info');
     }
-    
+
     return true;
   } catch (error) {
     console.error('發送資料錯誤:', error);
@@ -313,7 +317,7 @@ const handleDataReceived = (data: any) => {
   if (data.type === 'move' || data.type === 'select' || data.type === 'reset') {
     addConnectionLog(`收到對手的 ${getActionName(data.type)} 動作`, 'success');
   }
-  
+
   // 檢查時間戳記，如果延遲太久就警告
   if (data.timestamp) {
     const delay = new Date().getTime() - data.timestamp;

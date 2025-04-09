@@ -1,43 +1,8 @@
 import { defineStore } from 'pinia';
 import Peer from 'peerjs';
-import type { PlayerType, ConnectionLogItem, GamePiece, PieceSize, OnlineStoreState } from '../types/game';
+import type { PlayerType, ConnectionLogItem, GamePiece, PieceSize, OnlineStoreState, RemoteMoveData, RemoteSelectData, RemoteGameStateData, ConnectionStatus } from '../types/game';
 import type { GameState } from '../types/game';
 import { useGameStore } from './gameStore';
-
-// 定義遠端移動資料的介面
-interface RemoteMoveData {
-  x: number;
-  y: number;
-  piece?: GamePiece;
-  fromPosition?: { x: number; y: number; };
-  source?: 'board' | 'hand';
-  timestamp?: number;
-}
-
-// 定義遠端選擇資料的介面
-interface RemoteSelectData {
-  piece: GamePiece;
-  source: 'board' | 'hand';
-  position?: { x: number; y: number; };
-}
-
-// 定義遠端遊戲狀態資料的介面
-interface RemoteGameStateData {
-  gameState: {
-    currentPlayer: PlayerType;
-  };
-}
-
-// 擴展連線狀態類型
-export type ConnectionStatus =
-  | 'disconnected'
-  | 'initializing'
-  | 'waiting'
-  | 'connecting'
-  | 'connected'
-  | 'error';
-
-// 整合後的 OnlineStore 狀態介面
 
 // 全域變數 (非 store 狀態)
 let peer: Peer | null = null;

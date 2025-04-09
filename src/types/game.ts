@@ -56,16 +56,7 @@ export interface GameState {
   }>;
 }
 
-export interface OnlineGameState {
-  peerId: string;
-  connectionId: string | null;
-  isHost: boolean;
-  connectionStatus: ConnectionStatus;
-  connectionError?: string;
-  connectionLogs?: ConnectionLogItem[];
-}
-
-// 線上遊戲狀態介面
+// 線上遊戲狀態介面 (統一定義)
 export interface OnlineStoreState {
   peerId: string;
   connectionId: string | null;

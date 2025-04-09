@@ -50,8 +50,6 @@ export const useOnlineStore = defineStore('online', {
       if (this.connectionLogs.length > 20) {
         this.connectionLogs.pop();
       }
-
-      console.log(`[${type.toUpperCase()}] ${message}`);
     },
 
     // 清空連線日誌
@@ -69,7 +67,6 @@ export const useOnlineStore = defineStore('online', {
         this.connectionStatus = 'initializing';
         this.connectionError = '';
 
-        console.log('初始化 Peer...');
         peer = new Peer({
           config: {
             iceServers: [
@@ -83,22 +80,19 @@ export const useOnlineStore = defineStore('online', {
               },
             ]
           },
-          debug: 3 // 設定更詳細的除錯資訊 (0-3)
+          debug: 3
         });
 
         return new Promise<string>((resolve, reject) => {
           peer!.on('open', (id) => {
-            console.log('Peer 打開連接，ID:', id);
             this.peerId = id;
             this.isHost = true;
             this.connectionStatus = 'waiting';
             this.addConnectionLog(`已取得連線 ID: ${id}，等待對手連線...`, 'success');
-            console.log('Store 中的 peerId:', this.peerId);
             resolve(id);
           });
 
           peer!.on('error', (error) => {
-            console.error('PeerJS 錯誤:', error);
             this.connectionStatus = 'error';
             this.connectionError = error.message || '連線失敗';
             this.addConnectionLog(`連線錯誤: ${error.message || '未知錯誤'}`, 'error');
@@ -106,7 +100,6 @@ export const useOnlineStore = defineStore('online', {
           });
 
           peer!.on('connection', (conn) => {
-            console.log('連接到:', conn.peer);
             connection = conn;
             this.connectionId = conn.peer;
             this.connectionStatus = 'connecting';
@@ -138,7 +131,6 @@ export const useOnlineStore = defineStore('online', {
           });
         });
       } catch (error: any) {
-        console.error('初始化 Peer 時出錯:', error);
         this.connectionStatus = 'error';
         this.connectionError = error.message || '初始化失敗';
         this.addConnectionLog(`初始化錯誤: ${error.message || '未知錯誤'}`, 'error');
@@ -149,7 +141,6 @@ export const useOnlineStore = defineStore('online', {
     // 連接到另一個玩家
     connectToPeer(peerId: string) {
       if (!peer) {
-        console.error('PeerJS 尚未初始化');
         this.addConnectionLog('連接失敗：PeerJS 尚未初始化', 'error');
         return;
       }
@@ -243,7 +234,6 @@ export const useOnlineStore = defineStore('online', {
         const now = Date.now();
         if (now - lastHeartbeatResponse > 30000) {
           this.addConnectionLog('警告：已超過30秒未收到對方回應，連線可能有問題', 'error');
-          // 不立即斷開，但顯示警告
         }
 
         // 發送心跳
@@ -265,14 +255,12 @@ export const useOnlineStore = defineStore('online', {
     // 發送資料
     sendData(data: any) {
       if (!connection) {
-        console.error('沒有活躍的連接');
         this.addConnectionLog('發送資料失敗：未建立連接', 'error');
         return false;
       }
-      console.log(`發送資料:`, data);
 
       try {
-        // 添加時間戳記，方便除錯
+        // 添加時間戳記
         const dataWithTimestamp = {
           ...data,
           timestamp: new Date().getTime()
@@ -287,7 +275,6 @@ export const useOnlineStore = defineStore('online', {
 
         return true;
       } catch (error) {
-        console.error('發送資料錯誤:', error);
         this.addConnectionLog(`發送資料失敗: ${error}`, 'error');
         return false;
       }
@@ -308,8 +295,6 @@ export const useOnlineStore = defineStore('online', {
 
     // 處理接收到的資料
     handleDataReceived(data: any) {
-      console.log('收到資料:', data);
-
       // 記錄收到的動作到日誌（只記錄關鍵操作）
       if (data.type === 'move' || data.type === 'select' || data.type === 'reset') {
         this.addConnectionLog(`收到對手的 ${this.getActionName(data.type)} 動作`, 'success');
@@ -352,7 +337,6 @@ export const useOnlineStore = defineStore('online', {
           lastHeartbeatResponse = Date.now();
           break;
         default:
-          console.warn('未知的資料類型:', data);
           this.addConnectionLog(`收到未知類型的資料: ${data.type}`, 'error');
       }
     },
@@ -383,56 +367,32 @@ export const useOnlineStore = defineStore('online', {
       const { x, y, piece, fromPosition, source } = data;
       const gameStore = useGameStore();
 
-      console.log(`處理遠端移動動作: (${x}, ${y})`, data);
-
-      // 先記錄棋盤更新前的狀態
-      const topPieceBefore = gameStore.board[y][x].stack.length > 0
-        ? JSON.stringify(gameStore.board[y][x].stack[gameStore.board[y][x].stack.length - 1])
-        : "空";
-
       // 重要：確保先選擇正確的棋子，這是關鍵步驟
       if (piece) {
-        // 記錄收到的棋子大小
-        console.log(`收到的棋子大小: ${piece.size}, 玩家: ${piece.player}`);
         this.addConnectionLog(`收到 ${piece.size} 大小的棋子`, 'info');
 
         // 如果資料中有完整的棋子資訊，先選擇這個棋子
         if (source === 'board' && fromPosition) {
           // 從棋盤上移動
           gameStore.selectPiece(piece, 'board', fromPosition);
-          console.log(`已選擇棋盤上的棋子：`, piece, fromPosition);
         } else {
           // 從手牌移動
           gameStore.selectPiece(piece, 'hand');
-          console.log(`已選擇手牌中的棋子：`, piece);
 
           // 確保玩家手牌中有足夠的棋子
           const currentPlayer = gameStore.currentPlayer;
-          if (piece.size && ['small', 'medium', 'large'].includes(piece.size) && 
-              gameStore.playerPieces[currentPlayer][piece.size as 'small' | 'medium' | 'large'] <= 0) {
-            console.error(`錯誤：玩家手牌中沒有 ${piece.size} 大小的棋子`);
+          if (piece.size && ['small', 'medium', 'large'].includes(piece.size) &&
+            gameStore.playerPieces[currentPlayer][piece.size as 'small' | 'medium' | 'large'] <= 0) {
             this.addConnectionLog(`錯誤：玩家手牌中沒有 ${piece.size} 大小的棋子`, 'error');
-            // 嘗試尋找可用的替代棋子
             return;
-            // this.findAlternativePiece(currentPlayer);
           }
         }
       } else {
-        // 如果沒有棋子資訊，嘗試從當前玩家的手牌選擇一個
-        const currentPlayer = gameStore.currentPlayer;
         return;
-        // this.findAlternativePiece(currentPlayer);
       }
 
       // 執行移動
       const success = gameStore.placePiece(x, y);
-
-      // 記錄棋盤更新後的狀態
-      const topPieceAfter = gameStore.board[y][x].stack.length > 0
-        ? JSON.stringify(gameStore.board[y][x].stack[gameStore.board[y][x].stack.length - 1])
-        : "空";
-
-      console.log(`棋盤更新結果：${success ? "成功" : "失敗"}, 位置(${x}, ${y})，更新前: ${topPieceBefore}, 更新後: ${topPieceAfter}`);
 
       // 記錄到連線日誌
       if (success) {
@@ -451,17 +411,12 @@ export const useOnlineStore = defineStore('online', {
 
     // 發送移動
     sendMove(selectedPiece: GameState['selectedPiece'], x: number, y: number) {
-
-
       // 檢查棋子資訊是否完整
       if (!selectedPiece.piece) {
-        console.error('錯誤：選擇的棋子資訊不完整');
         this.addConnectionLog('發送移動失敗：選擇的棋子資訊不完整', 'error');
         return false;
       }
 
-      // 記錄發送的棋子大小，便於除錯
-      console.log(`正在發送棋子大小: ${selectedPiece.piece!.size}, 位置: (${x}, ${y})`);
       this.addConnectionLog(`發送 ${selectedPiece.piece!.size} 大小的棋子到位置 (${x}, ${y})`, 'info');
 
       // 傳送更完整的資料，包含棋子和起始位置資訊

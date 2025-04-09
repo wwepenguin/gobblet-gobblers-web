@@ -11,13 +11,6 @@
 
     <!-- 使用共用的 GameArea 元件 -->
     <GameArea :online="false" @move="handleMove" @select="handleSelect" />
-
-    <!-- <div class="game-instructions">
-      <h3>如何遊玩</h3>
-      <p>1. 點擊你的棋子並放置在棋盤上</p>
-      <p>2. 大的棋子可以蓋住小的棋子</p>
-      <p>3. 將三個棋子連成一直線(橫、豎或對角線)獲勝</p>
-    </div> -->
   </div>
 </template>
 
@@ -27,27 +20,30 @@ import { useRouter } from 'vue-router';
 import GameArea from '../components/game/GameArea.vue';
 import GameStatus from '../components/game/GameStatus.vue';
 import { useGameStore } from '../stores/gameStore';
+import type { GamePiece } from '../types/game';
 
 const router = useRouter();
 const gameStore = useGameStore();
 const startTipKey = ref(0);
 
+// 導航到主頁
 const goToHome = () => {
   router.push('/');
 };
 
+// 重置遊戲
 const handleResetGame = () => {
   gameStore.resetGame();
   startTipKey.value++; // 觸發先手提示重新顯示
 };
 
 // 處理移動
-const handleMove = (x: number, y: number) => {
+const handleMove = (piece: any, x: number, y: number) => {
   gameStore.placePiece(x, y);
 };
 
 // 處理選擇
-const handleSelect = (piece: any, x: number, y: number) => {
+const handleSelect = (piece: GamePiece, x: number, y: number) => {
   gameStore.selectPiece(piece, 'board', { x, y });
 };
 </script>

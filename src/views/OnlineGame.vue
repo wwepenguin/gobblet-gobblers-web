@@ -1,7 +1,6 @@
 <template>
   <div class="online-game-container">
     <div class="game-header">
-      <!-- <h1>Gobblet Gobblers - 線上對戰</h1> -->
       <div class="controls">
         <button class="control-button" @click="resetGame">重新開始</button>
         <button class="control-button" @click="disconnect">斷開連接</button>
@@ -107,16 +106,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onBeforeUnmount, watch } from 'vue';
+import { ref, computed, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
-import GameBoard from '../components/game/GameBoard.vue';
-import PlayerHand from '../components/game/PlayerHand.vue';
 import GameStatus from '../components/game/GameStatus.vue';
 import GameArea from '../components/game/GameArea.vue';
 import { useOnlineStore } from '../stores/onlineStore';
 import { useGameStore } from '../stores/gameStore';
 import type { ConnectionStatus, GameState } from '../types/game';
-import type { GamePiece } from '../types/game';
+
 const router = useRouter();
 const gameStore = useGameStore();
 const onlineStore = useOnlineStore();
@@ -172,13 +169,11 @@ const connectionStatusMessage = computed(() => {
 const createGame = async () => {
   try {
     const id = await onlineStore.initPeer();
-    console.log('創建遊戲成功，Peer ID:', id);
-    // 確保 peerId 被正確設置
     if (!peerId.value) {
       alert('遊戲 ID 生成失敗，請重試');
     }
   } catch (error) {
-    console.error('初始化 Peer 出錯:', error);
+    // 錯誤處理由 onlineStore 內部處理
   }
 };
 
@@ -188,8 +183,6 @@ const joinGame = () => {
 
   onlineStore.initPeer().then(() => {
     onlineStore.connectToPeer(connectId.value);
-  }).catch(error => {
-    console.error('連接錯誤:', error);
   });
 };
 
@@ -200,8 +193,8 @@ const copyPeerId = () => {
       .then(() => {
         alert('已複製遊戲 ID');
       })
-      .catch(err => {
-        console.error('複製出錯:', err);
+      .catch(() => {
+        // 錯誤處理簡化
       });
   }
 };
@@ -218,7 +211,6 @@ const sendMove = (piece: GameState['selectedPiece'], x: number, y: number) => {
 
 // 發送選擇
 const sendSelect = (piece: any, x: number, y: number) => {
-  console.log('[onlineGame::sendSelect] 選擇棋子:', piece, '位置:', x, y);
   onlineStore.sendSelect(piece, 'board', { x, y });
 };
 
@@ -233,14 +225,6 @@ const goToHome = () => {
   disconnect();
   router.push('/');
 };
-
-// 監聽 peerId 的變更
-watch(() => onlineStore.peerId, (newValue) => {
-  console.log('peerId 變更為:', newValue);
-  if (newValue) {
-    console.log('成功獲取 Peer ID');
-  }
-});
 
 // 組件卸載前斷開連接
 onBeforeUnmount(() => {

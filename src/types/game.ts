@@ -64,3 +64,37 @@ export interface OnlineGameState {
   connectionError?: string;
   connectionLogs?: ConnectionLogItem[];
 }
+
+// 線上遊戲狀態介面
+export interface OnlineStoreState {
+  peerId: string;
+  connectionId: string | null;
+  isHost: boolean;
+  connectionStatus: ConnectionStatus;
+  connectionError: string;
+  connectionLogs: ConnectionLogItem[];
+}
+
+// 遠端移動資料介面
+export interface RemoteMoveData {
+  x: number;
+  y: number;
+  piece?: GamePiece;
+  fromPosition?: { x: number; y: number; };
+  source?: 'board' | 'hand';
+  timestamp?: number;
+}
+
+// 遠端選擇資料介面
+export interface RemoteSelectData {
+  piece: GamePiece;
+  source: 'board' | 'hand';
+  position?: { x: number; y: number; };
+}
+
+// 遠端遊戲狀態資料介面
+export interface RemoteGameStateData {
+  gameState: {
+    currentPlayer: PlayerType;
+  };
+}

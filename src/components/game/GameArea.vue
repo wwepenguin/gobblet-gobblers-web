@@ -13,12 +13,10 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
+import { useGameStore } from '../../stores/gameStore';
 import GameBoard from './GameBoard.vue';
 import PlayerHand from './PlayerHand.vue';
-import { useGameStore } from '../../stores/gameStore';
-import { useOnlineStore } from '../../stores/onlineStore';
-import { computed } from 'vue';
-import type { GamePiece, GameState } from '../../types/game';
 
 // 定義屬性
 const props = defineProps({

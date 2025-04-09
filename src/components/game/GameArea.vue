@@ -60,6 +60,18 @@ const handleSelect = (piece: any, x: number, y: number) => {
     justify-content: center;
     align-items: center;
     margin: 2rem 0;
+
+    &.player1 {
+        order: 1;
+    }
+
+    &.player2 {
+        order: 3;
+    }
+
+    &.board-container {
+        order: 2;
+    }
 }
 
 .board-container {
@@ -75,9 +87,5 @@ const handleSelect = (piece: any, x: number, y: number) => {
         gap: 2rem;
     }
 
-    .board-container {
-        order: -1;
-        /* 棋盤放在中間 */
-    }
 }
 </style>

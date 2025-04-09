@@ -46,6 +46,49 @@ export const onlineStore = reactive<OnlineGameState & {
 let peer: Peer | null = null;
 let connection: any = null;
 
+// 心跳和確認機制
+let heartbeatInterval: any = null;
+let lastHeartbeatResponse = 0;
+
+// 開始心跳檢查
+const startHeartbeat = () => {
+  if (heartbeatInterval) {
+    clearInterval(heartbeatInterval);
+  }
+  
+  lastHeartbeatResponse = Date.now();
+  
+  // 每10秒發送一次心跳
+  heartbeatInterval = setInterval(() => {
+    if (!connection || onlineStore.connectionStatus !== 'connected') {
+      clearInterval(heartbeatInterval);
+      heartbeatInterval = null;
+      return;
+    }
+    
+    // 檢查上次心跳回應時間，如果超過30秒沒回應，視為連線問題
+    const now = Date.now();
+    if (now - lastHeartbeatResponse > 30000) {
+      addConnectionLog('警告：已超過30秒未收到對方回應，連線可能有問題', 'error');
+      // 不立即斷開，但顯示警告
+    }
+    
+    // 發送心跳
+    sendData({
+      type: 'heartbeat',
+      id: `hb-${now}`
+    });
+  }, 10000);
+};
+
+// 停止心跳檢查
+const stopHeartbeat = () => {
+  if (heartbeatInterval) {
+    clearInterval(heartbeatInterval);
+    heartbeatInterval = null;
+  }
+};
+
 // 添加連線日誌
 const addConnectionLog = (message: string, type: 'info' | 'error' | 'success' = 'info') => {
   onlineStore.connectionLogs.unshift({
@@ -78,15 +121,17 @@ export const initPeer = () => {
       onlineStore.connectionError = '';
 
       console.log('初始化 Peer...');
-      // peer = new Peer({
-      //   config: {
-      //     iceServers: [
-      //       { urls: 'stun:stun.l.google.com:19302' },
-      //       { urls: 'stun:global.stun.twilio.com:3478?transport=udp' }
-      //     ]
-      //   }
-      // })
-      peer = new Peer();
+      peer = new Peer({
+        config: {
+          iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' },
+            { urls: 'stun:global.stun.twilio.com:3478?transport=udp' }
+          ]
+        },
+        debug: 3 // 設定更詳細的除錯資訊 (0-3)
+      });
 
       peer.on('open', (id) => {
         console.log('Peer 打開連接，ID:', id);
@@ -116,6 +161,7 @@ export const initPeer = () => {
         conn.on('open', () => {
           onlineStore.connectionStatus = 'connected';
           addConnectionLog(`與對手 ${conn.peer} 連線成功！`, 'success');
+          startHeartbeat();
         });
 
         conn.on('data', (data: unknown) => {
@@ -126,6 +172,7 @@ export const initPeer = () => {
           onlineStore.connectionStatus = 'disconnected';
           onlineStore.connectionId = null;
           connection = null;
+          stopHeartbeat();
           addConnectionLog('對手已斷開連線', 'info');
         });
 
@@ -165,6 +212,7 @@ export const connectToPeer = (peerId: string) => {
     onlineStore.connectionId = peerId;
     onlineStore.connectionStatus = 'connected';
     addConnectionLog(`已成功連接到對手 ${peerId}！`, 'success');
+    startHeartbeat();
     // 連接後發送準備就緒消息
     sendData({ type: 'ready' });
   });
@@ -177,6 +225,7 @@ export const connectToPeer = (peerId: string) => {
     onlineStore.connectionStatus = 'disconnected';
     onlineStore.connectionId = null;
     connection = null;
+    stopHeartbeat();
     addConnectionLog('對手已斷開連線', 'info');
   });
 
@@ -198,6 +247,7 @@ export const disconnect = () => {
     peer = null;
   }
 
+  stopHeartbeat();
   addConnectionLog('已斷開連線', 'info');
   resetOnlineStore();
 };
@@ -216,19 +266,61 @@ export const resetOnlineStore = () => {
 const sendData = (data: any) => {
   if (!connection) {
     console.error('沒有活躍的連接');
-    return;
+    addConnectionLog('發送資料失敗：未建立連接', 'error');
+    return false;
   }
 
   try {
-    connection.send(data);
+    // 添加時間戳記，方便除錯
+    const dataWithTimestamp = {
+      ...data,
+      timestamp: new Date().getTime()
+    };
+    
+    connection.send(dataWithTimestamp);
+    
+    // 記錄發送的動作到日誌（只記錄關鍵操作）
+    if (data.type === 'move' || data.type === 'select' || data.type === 'reset') {
+      addConnectionLog(`發送 ${getActionName(data.type)} 動作`, 'info');
+    }
+    
+    return true;
   } catch (error) {
     console.error('發送資料錯誤:', error);
+    addConnectionLog(`發送資料失敗: ${error}`, 'error');
+    return false;
+  }
+};
+
+// 獲取動作名稱（用於日誌顯示）
+const getActionName = (type: string): string => {
+  switch (type) {
+    case 'move': return '移動';
+    case 'select': return '選擇';
+    case 'reset': return '重置';
+    case 'ready': return '準備就緒';
+    case 'gameState': return '遊戲狀態';
+    case 'heartbeat': return '心跳';
+    default: return type;
   }
 };
 
 // @ts-ignore
 const handleDataReceived = (data: any) => {
   console.log('收到資料:', data);
+
+  // 記錄收到的動作到日誌（只記錄關鍵操作）
+  if (data.type === 'move' || data.type === 'select' || data.type === 'reset') {
+    addConnectionLog(`收到對手的 ${getActionName(data.type)} 動作`, 'success');
+  }
+  
+  // 檢查時間戳記，如果延遲太久就警告
+  if (data.timestamp) {
+    const delay = new Date().getTime() - data.timestamp;
+    if (delay > 3000) { // 超過3秒就警告
+      addConnectionLog(`注意：收到的資料延遲 ${Math.round(delay / 1000)} 秒`, 'info');
+    }
+  }
 
   switch (data.type) {
     case 'move':
@@ -239,6 +331,7 @@ const handleDataReceived = (data: any) => {
       break;
     case 'ready':
       // 對方準備就緒
+      addConnectionLog('對手已準備就緒', 'info');
       // 如果是主機，在收到 ready 後發送遊戲狀態
       if (onlineStore.isHost) {
         sendGameState();
@@ -249,10 +342,17 @@ const handleDataReceived = (data: any) => {
       handleGameState(data);
       break;
     case 'reset':
+      addConnectionLog('對手重置了遊戲', 'info');
       resetGame();
+      break;
+    case 'heartbeat':
+      // 更新心跳回應時間
+      lastHeartbeatResponse = Date.now();
+      addConnectionLog('收到心跳回應', 'info');
       break;
     default:
       console.warn('未知的資料類型:', data);
+      addConnectionLog(`收到未知類型的資料: ${data.type}`, 'error');
   }
 };
 
@@ -335,4 +435,4 @@ export const getPlayerRole = (): PlayerType => {
 // 檢查是否輪到當前玩家
 export const isMyTurn = (): boolean => {
   return gameStore.currentPlayer === getPlayerRole();
-}; 
+};

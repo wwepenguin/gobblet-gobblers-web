@@ -23,7 +23,7 @@
     <div v-if="connectionStatus === 'disconnected'" class="connection-panel">
       <div class="connection-options">
         <div class="connection-option">
-          <button class="action-button" @click="createGame">創建遊戲</button>
+          <button class="action-button" @click="createGame">建立遊戲</button>
           <div v-if="peerId" class="peer-id-display">
             <p>遊戲 ID：({{ peerId }})</p>
             <div class="peer-id">
@@ -99,8 +99,8 @@
         :connection-id="onlineStore.connectionId || undefined" :connection-error="onlineStore.connectionError"
         @restart="sendReset" :key="startTipKey" />
 
-      <!-- 使用共用的 GameArea 元件 -->
-      <GameArea :online="true" :is-my-turn="isMyTurn" :player-role="playerRole" @move="sendMove" @select="sendSelect" />
+      <!-- 使用共用的 GameArea 元件，直接傳遞必要屬性 -->
+      <GameArea :online="true" :is-my-turn="isMyTurn" :player-role="playerRole" />
     </template>
   </div>
 </template>
@@ -112,7 +112,7 @@ import GameStatus from '../components/game/GameStatus.vue';
 import GameArea from '../components/game/GameArea.vue';
 import { useOnlineStore } from '../stores/onlineStore';
 import { useGameStore } from '../stores/gameStore';
-import type { ConnectionStatus, GameState } from '../types/game';
+import type { ConnectionStatus } from '../types/game';
 
 const router = useRouter();
 const gameStore = useGameStore();
@@ -202,16 +202,6 @@ const copyPeerId = () => {
 // 斷開連接
 const disconnect = () => {
   onlineStore.disconnect();
-};
-
-// 發送移動
-const sendMove = (piece: GameState['selectedPiece'], x: number, y: number) => {
-  onlineStore.sendMove(piece, x, y);
-};
-
-// 發送選擇
-const sendSelect = (piece: any, x: number, y: number) => {
-  onlineStore.sendSelect(piece, 'board', { x, y });
 };
 
 // 發送重置

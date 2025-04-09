@@ -409,17 +409,17 @@ export const useOnlineStore = defineStore('online', {
       gameStore.selectPiece(piece, source, position);
     },
 
-    // 發送移動
+    // 發送移動 (新版：直接接收棋子資訊)
     sendMove(selectedPiece: GameState['selectedPiece'], x: number, y: number) {
       // 檢查棋子資訊是否完整
-      if (!selectedPiece.piece) {
+      if (!selectedPiece || !selectedPiece.piece) {
         this.addConnectionLog('發送移動失敗：選擇的棋子資訊不完整', 'error');
         return false;
       }
 
-      this.addConnectionLog(`發送 ${selectedPiece.piece!.size} 大小的棋子到位置 (${x}, ${y})`, 'info');
+      this.addConnectionLog(`發送 ${selectedPiece.piece.size} 大小的棋子到位置 (${x}, ${y})`, 'info');
 
-      // 傳送更完整的資料，包含棋子和起始位置資訊
+      // 傳送完整的資料，包含棋子和起始位置資訊
       return this.sendData({
         type: 'move',
         x,
@@ -432,7 +432,7 @@ export const useOnlineStore = defineStore('online', {
     },
 
     // 發送選擇
-    sendSelect(piece: any, source: 'board' | 'hand', position?: { x: number; y: number; }) {
+    sendSelect(piece: GamePiece, source: 'board' | 'hand', position?: { x: number; y: number; }) {
       this.sendData({
         type: 'select',
         piece,

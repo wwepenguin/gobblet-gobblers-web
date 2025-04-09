@@ -64,7 +64,6 @@ export const useGameStore = defineStore('game', {
 
     // 選擇棋子
     selectPiece(piece: GamePiece | null, source: 'board' | 'hand', position?: { x: number; y: number; }) {
-      // debugger
       this.selectedPiece = {
         piece,
         source,

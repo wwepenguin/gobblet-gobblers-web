@@ -23,6 +23,7 @@ import { computed } from 'vue';
 import GamePiece from './GamePiece.vue';
 import { useGameStore } from '../../stores/gameStore';
 import type { PieceSize, PlayerType } from '../../types/game';
+import { useOnlineStore } from '../../stores/onlineStore';
 
 // 取得遊戲 store
 const gameStore = useGameStore();
@@ -89,8 +90,10 @@ const handleSelectPiece = (size: PieceSize) => {
   console.log('Selected piece:', gameStore.getSelectedPiece);
 
   if (props.online) {
-    emit('select', piece);
-    console.log('Emitting select event for online mode', useGameStore().getSelectedPiece);
+    useOnlineStore().sendSelect(piece, 'board', { x: -1, y: -1 });
+
+    // emit('select', piece);
+    // console.log('Emitting select event for online mode', useGameStore().getSelectedPiece);
 
   }
 };

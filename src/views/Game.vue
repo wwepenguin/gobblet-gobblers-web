@@ -7,10 +7,10 @@
       </div>
     </div>
 
-    <GameStatus @restart="handleResetGame" :key="startTipKey" />
+    <GameStatus @restart="handleResetGame" :key="startTipKey" :online="false" :connection-status="'disconnected'" />
 
-    <!-- 使用共用的 GameArea 元件 -->
-    <GameArea :online="false" @move="handleMove" @select="handleSelect" />
+    <!-- 使用共用的 GameArea 元件，不再傳遞 move 和 select 事件處理函式 -->
+    <GameArea :online="false" />
   </div>
 </template>
 
@@ -20,7 +20,6 @@ import { useRouter } from 'vue-router';
 import GameArea from '../components/game/GameArea.vue';
 import GameStatus from '../components/game/GameStatus.vue';
 import { useGameStore } from '../stores/gameStore';
-import type { GamePiece } from '../types/game';
 
 const router = useRouter();
 const gameStore = useGameStore();
@@ -35,16 +34,6 @@ const goToHome = () => {
 const handleResetGame = () => {
   gameStore.resetGame();
   startTipKey.value++; // 觸發先手提示重新顯示
-};
-
-// 處理移動
-const handleMove = (piece: any, x: number, y: number) => {
-  gameStore.placePiece(x, y);
-};
-
-// 處理選擇
-const handleSelect = (piece: GamePiece, x: number, y: number) => {
-  gameStore.selectPiece(piece, 'board', { x, y });
 };
 </script>
 

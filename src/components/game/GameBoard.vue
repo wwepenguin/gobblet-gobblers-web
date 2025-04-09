@@ -20,6 +20,7 @@ import { computed } from 'vue';
 import GamePiece from './GamePiece.vue';
 import { useGameStore } from '../../stores/gameStore';
 import type { GamePiece as GamePieceType, GameState } from '../../types/game';
+import { useOnlineStore } from '../../stores/onlineStore';
 
 // 取得遊戲 store
 const gameStore = useGameStore();
@@ -53,12 +54,10 @@ const handleCellClick = (x: number, y: number) => {
   }
 
   if (selectedPiece.value.piece && isValidMove(x, y)) {
-
     const movePiece = gameStore.placePiece(x, y);
-
     if (movePiece != false) {
       if (props.online) {
-        emit('move', movePiece, x, y);
+        useOnlineStore().sendMove(movePiece, x, y);
       }
     }
   }
@@ -74,7 +73,7 @@ const selectBoardPiece = (piece: GamePieceType | null, x: number, y: number) => 
     gameStore.selectPiece(piece, 'board', { x, y });
 
     if (props.online) {
-      emit('select', piece, x, y);
+      useOnlineStore().sendSelect(piece, 'board', { x, y });
     }
   }
 };

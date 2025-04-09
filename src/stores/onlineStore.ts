@@ -1,13 +1,27 @@
 import { defineStore } from 'pinia';
 import Peer from 'peerjs';
-import type { PlayerType, ConnectionLogItem, GamePiece, PieceSize, OnlineStoreState, RemoteMoveData, RemoteSelectData, RemoteGameStateData, ConnectionStatus } from '../types/game';
+import type {
+  PlayerType,
+  ConnectionLogItem,
+  GamePiece,
+  PieceSize,
+  OnlineStoreState,
+  RemoteMoveData,
+  RemoteSelectData,
+  RemoteGameStateData,
+  ConnectionStatus,
+  RemoteData,
+  BaseDataPayload,
+  HeartbeatData
+} from '../types/game';
 import type { GameState } from '../types/game';
 import { useGameStore } from './gameStore';
+import type { DataConnection } from 'peerjs';
 
 // 全域變數 (非 store 狀態)
 let peer: Peer | null = null;
-let connection: any = null;
-let heartbeatInterval: any = null;
+let connection: DataConnection | null = null;
+let heartbeatInterval: number | null = null;
 let lastHeartbeatResponse = 0;
 
 // 定義 OnlineStore
@@ -107,17 +121,17 @@ export const useOnlineStore = defineStore('online', {
               this.addConnectionLog('對手已斷開連線', 'info');
             });
 
-            conn.on('error', (err: any) => {
+            conn.on('error', (err: Error) => {
               this.connectionStatus = 'error';
               this.connectionError = err.message || '連線過程中發生錯誤';
               this.addConnectionLog(`連線錯誤: ${err.message || '未知錯誤'}`, 'error');
             });
           });
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
         this.connectionStatus = 'error';
-        this.connectionError = error.message || '初始化失敗';
-        this.addConnectionLog(`初始化錯誤: ${error.message || '未知錯誤'}`, 'error');
+        this.connectionError = error instanceof Error ? error.message : '初始化失敗';
+        this.addConnectionLog(`初始化錯誤: ${error instanceof Error ? error.message : '未知錯誤'}`, 'error');
         throw error;
       }
     },
@@ -160,7 +174,7 @@ export const useOnlineStore = defineStore('online', {
         this.addConnectionLog('對手已斷開連線', 'info');
       });
 
-      connection.on('error', (err: any) => {
+      connection.on('error', (err: Error) => {
         this.connectionStatus = 'error';
         this.connectionError = err.message || '連線過程中發生錯誤';
         this.addConnectionLog(`連線錯誤: ${err.message || '未知錯誤'}`, 'error');
@@ -207,10 +221,12 @@ export const useOnlineStore = defineStore('online', {
       lastHeartbeatResponse = Date.now();
 
       // 每10秒發送一次心跳
-      heartbeatInterval = setInterval(() => {
+      heartbeatInterval = window.setInterval(() => {
         if (!connection || this.connectionStatus !== 'connected') {
-          clearInterval(heartbeatInterval);
-          heartbeatInterval = null;
+          if (heartbeatInterval) {
+            clearInterval(heartbeatInterval);
+            heartbeatInterval = null;
+          }
           return;
         }
 
@@ -221,10 +237,11 @@ export const useOnlineStore = defineStore('online', {
         }
 
         // 發送心跳
-        this.sendData({
+        const heartbeatData: HeartbeatData = {
           type: 'heartbeat',
           id: `hb-${now}`
-        });
+        };
+        this.sendData(heartbeatData);
       }, 10000);
     },
 
@@ -237,7 +254,7 @@ export const useOnlineStore = defineStore('online', {
     },
 
     // 發送資料
-    sendData(data: any) {
+    sendData<T extends RemoteData>(data: Omit<T, 'timestamp'>): boolean {
       if (!connection) {
         this.addConnectionLog('發送資料失敗：未建立連接', 'error');
         return false;
@@ -248,7 +265,7 @@ export const useOnlineStore = defineStore('online', {
         const dataWithTimestamp = {
           ...data,
           timestamp: new Date().getTime()
-        };
+        } as RemoteData;
 
         connection.send(dataWithTimestamp);
 
@@ -259,7 +276,7 @@ export const useOnlineStore = defineStore('online', {
 
         return true;
       } catch (error) {
-        this.addConnectionLog(`發送資料失敗: ${error}`, 'error');
+        this.addConnectionLog(`發送資料失敗: ${error instanceof Error ? error.message : String(error)}`, 'error');
         return false;
       }
     },
@@ -278,26 +295,34 @@ export const useOnlineStore = defineStore('online', {
     },
 
     // 處理接收到的資料
-    handleDataReceived(data: any) {
+    handleDataReceived(data: unknown): void {
+      // 先確認資料類型是否符合預期
+      if (!this.isValidData(data)) {
+        this.addConnectionLog(`收到無效的資料格式`, 'error');
+        return;
+      }
+
+      const typedData = data as RemoteData;
+
       // 記錄收到的動作到日誌（只記錄關鍵操作）
-      if (data.type === 'move' || data.type === 'select' || data.type === 'reset') {
-        this.addConnectionLog(`收到對手的 ${this.getActionName(data.type)} 動作`, 'success');
+      if (typedData.type === 'move' || typedData.type === 'select' || typedData.type === 'reset') {
+        this.addConnectionLog(`收到對手的 ${this.getActionName(typedData.type)} 動作`, 'success');
       }
 
       // 檢查時間戳記，如果延遲太久就警告
-      if (data.timestamp) {
-        const delay = new Date().getTime() - data.timestamp;
+      if (typedData.timestamp) {
+        const delay = new Date().getTime() - typedData.timestamp;
         if (delay > 3000) { // 超過3秒就警告
           this.addConnectionLog(`注意：收到的資料延遲 ${Math.round(delay / 1000)} 秒`, 'info');
         }
       }
 
-      switch (data.type) {
+      switch (typedData.type) {
         case 'move':
-          this.handleRemoteMove(data as RemoteMoveData);
+          this.handleRemoteMove(typedData as RemoteMoveData);
           break;
         case 'select':
-          this.handleRemoteSelect(data as RemoteSelectData);
+          this.handleRemoteSelect(typedData as RemoteSelectData);
           break;
         case 'ready':
           // 對方準備就緒
@@ -309,7 +334,7 @@ export const useOnlineStore = defineStore('online', {
           break;
         case 'gameState':
           // 收到遊戲狀態，更新本地遊戲
-          this.handleGameState(data as RemoteGameStateData);
+          this.handleGameState(typedData as RemoteGameStateData);
           break;
         case 'reset':
           this.addConnectionLog('對手重置了遊戲', 'info');
@@ -321,8 +346,18 @@ export const useOnlineStore = defineStore('online', {
           lastHeartbeatResponse = Date.now();
           break;
         default:
-          this.addConnectionLog(`收到未知類型的資料: ${data.type}`, 'error');
+          this.addConnectionLog(`收到未知類型的資料: ${(typedData as BaseDataPayload).type}`, 'error');
       }
+    },
+
+    // 驗證接收到的資料是否符合預期格式
+    isValidData(data: unknown): data is RemoteData {
+      if (typeof data !== 'object' || data === null) {
+        return false;
+      }
+
+      const payload = data as Partial<BaseDataPayload>;
+      return payload.type !== undefined;
     },
 
     // 處理遠端遊戲狀態
@@ -338,12 +373,13 @@ export const useOnlineStore = defineStore('online', {
     // 發送遊戲狀態
     sendGameState() {
       const gameStore = useGameStore();
-      this.sendData({
+      const gameStateData: RemoteGameStateData = {
         type: 'gameState',
         gameState: {
           currentPlayer: gameStore.currentPlayer
         }
-      });
+      };
+      this.sendData(gameStateData);
     },
 
     // 處理遠端移動
@@ -403,7 +439,7 @@ export const useOnlineStore = defineStore('online', {
       this.addConnectionLog(`發送 ${selectedPiece.piece.size} 大小的棋子到位置 (${x}, ${y})`, 'info');
 
       // 傳送完整的資料，包含棋子和起始位置資訊
-      return this.sendData({
+      const moveData: RemoteMoveData = {
         type: 'move',
         x,
         y,
@@ -411,24 +447,28 @@ export const useOnlineStore = defineStore('online', {
         source: selectedPiece.source,
         fromPosition: selectedPiece.position,
         timestamp: selectedPiece.lastSelectedTime || Date.now()
-      });
+      };
+
+      return this.sendData(moveData);
     },
 
     // 發送選擇
     sendSelect(piece: GamePiece, source: 'board' | 'hand', position?: { x: number; y: number; }) {
-      this.sendData({
+      const selectData: RemoteSelectData = {
         type: 'select',
         piece,
         source,
         position
-      });
+      };
+      this.sendData(selectData);
     },
 
     // 發送重置遊戲
     sendReset() {
-      this.sendData({
-        type: 'reset'
-      });
+      const resetData = {
+        type: 'reset' as const
+      };
+      this.sendData(resetData);
       const gameStore = useGameStore();
       gameStore.resetGame();
     },

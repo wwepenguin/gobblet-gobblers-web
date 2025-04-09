@@ -66,26 +66,62 @@ export interface OnlineStoreState {
   connectionLogs: ConnectionLogItem[];
 }
 
+// 資料動作類型
+export type DataActionType = 'move' | 'select' | 'reset' | 'ready' | 'gameState' | 'heartbeat';
+
+// 基本資料介面，包含所有共用屬性
+export interface BaseDataPayload {
+  type: DataActionType;
+  timestamp?: number;
+}
+
 // 遠端移動資料介面
-export interface RemoteMoveData {
+export interface RemoteMoveData extends BaseDataPayload {
+  type: 'move';
   x: number;
   y: number;
   piece?: GamePiece;
   fromPosition?: { x: number; y: number; };
   source?: 'board' | 'hand';
-  timestamp?: number;
 }
 
 // 遠端選擇資料介面
-export interface RemoteSelectData {
+export interface RemoteSelectData extends BaseDataPayload {
+  type: 'select';
   piece: GamePiece;
   source: 'board' | 'hand';
   position?: { x: number; y: number; };
 }
 
 // 遠端遊戲狀態資料介面
-export interface RemoteGameStateData {
+export interface RemoteGameStateData extends BaseDataPayload {
+  type: 'gameState';
   gameState: {
     currentPlayer: PlayerType;
   };
 }
+
+// 心跳資料介面
+export interface HeartbeatData extends BaseDataPayload {
+  type: 'heartbeat';
+  id: string;
+}
+
+// 重設資料介面
+export interface ResetData extends BaseDataPayload {
+  type: 'reset';
+}
+
+// 準備就緒資料介面
+export interface ReadyData extends BaseDataPayload {
+  type: 'ready';
+}
+
+// 聯合所有可能的資料類型
+export type RemoteData =
+  | RemoteMoveData
+  | RemoteSelectData
+  | RemoteGameStateData
+  | HeartbeatData
+  | ResetData
+  | ReadyData;

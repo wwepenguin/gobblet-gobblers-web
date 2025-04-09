@@ -1,35 +1,31 @@
 <template>
-  <div 
-    class="game-piece" 
-    :class="[
-      `size-${piece.size}`, 
-      `player-${piece.player}`, 
-      { 'selectable': selectable, 'selected': selected }
-    ]"
-    @click="handleClick"
-  >
+  <div class="game-piece" :class="[
+    `size-${piece.size}`,
+    `player-${piece.player}`,
+    { 'selectable': selectable, 'selected': selected }
+  ]" @click="handleClick">
     <div class="piece-inner"></div>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { GamePiece as GamePieceType } from '../../types/game'
+import type { GamePiece as GamePieceType } from '../../types/game';
 
 const props = defineProps<{
-  piece: GamePieceType
-  selectable?: boolean
-  selected?: boolean
-}>()
+  piece: GamePieceType;
+  selectable?: boolean;
+  selected?: boolean;
+}>();
 
 const emit = defineEmits<{
-  (e: 'select', piece: GamePieceType): void
-}>()
+  (e: 'select', piece: GamePieceType): void;
+}>();
 
 const handleClick = () => {
   if (props.selectable) {
-    emit('select', props.piece)
+    emit('select', props.piece);
   }
-}
+};
 </script>
 
 <style scoped>
@@ -96,11 +92,11 @@ const handleClick = () => {
   .size-small {
     width: 35px;
   }
-  
+
   .size-medium {
     width: 50px;
   }
-  
+
   .size-large {
     width: 65px;
   }
@@ -111,11 +107,11 @@ const handleClick = () => {
   .size-small {
     width: 28px;
   }
-  
+
   .size-medium {
     width: 40px;
   }
-  
+
   .size-large {
     width: 52px;
   }
@@ -147,7 +143,7 @@ const handleClick = () => {
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   }
-  
+
   .selected {
     transform: translateY(-3px);
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
@@ -160,10 +156,10 @@ const handleClick = () => {
     transform: translateY(-1px);
     box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
   }
-  
+
   .selected {
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
   }
 }
-</style> 
+</style>

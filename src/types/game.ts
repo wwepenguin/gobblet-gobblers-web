@@ -42,23 +42,25 @@ export interface GameState {
   selectedPiece: {
     piece: GamePiece | null;
     source: 'board' | 'hand';
-    position?: { x: number; y: number };
+    position?: { x: number; y: number; };
+    lastSelectedTime?: number; // 新增時間戳記，追蹤最後選擇的時間
+    isValid?: boolean; // 標記選擇是否有效
   };
   gameStatus: 'playing' | 'win' | 'draw';
   winner: PlayerType | null;
   moveHistory: Array<{
     player: PlayerType;
-    from: { x: number; y: number } | 'hand';
-    to: { x: number; y: number };
+    from: { x: number; y: number; } | 'hand';
+    to: { x: number; y: number; };
     piece: GamePiece;
   }>;
 }
 
-export interface OnlineGameState extends GameState {
+export interface OnlineGameState {
   peerId: string;
   connectionId: string | null;
   isHost: boolean;
   connectionStatus: ConnectionStatus;
   connectionError?: string;
   connectionLogs?: ConnectionLogItem[];
-} 
+}

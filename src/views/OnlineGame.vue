@@ -97,12 +97,11 @@
     <!-- 已連接狀態 - 顯示遊戲界面 -->
     <template v-else-if="connectionStatus === 'connected'">
       <GameStatus :online="true" :connection-status="connectionStatus" :is-host="isHost" :peer-id="peerId"
-        :connection-id="onlineStore.connectionId" :connection-error="onlineStore.connectionError" @restart="sendReset"
-        :key="startTipKey" />
+        :connection-id="onlineStore.connectionId || undefined" :connection-error="onlineStore.connectionError"
+        @restart="sendReset" :key="startTipKey" />
 
       <!-- 使用共用的 GameArea 元件 -->
-      <GameArea :online="true" :is-my-turn="isMyTurn" :player-role="getPlayerRole" @move="sendMove"
-        @select="sendSelect" />
+      <GameArea :online="true" :is-my-turn="isMyTurn" :player-role="playerRole" @move="sendMove" @select="sendSelect" />
     </template>
   </div>
 </template>
@@ -114,28 +113,20 @@ import GameBoard from '../components/game/GameBoard.vue';
 import PlayerHand from '../components/game/PlayerHand.vue';
 import GameStatus from '../components/game/GameStatus.vue';
 import GameArea from '../components/game/GameArea.vue';
-import {
-  initPeer,
-  connectToPeer,
-  disconnect as disconnectPeer,
-  sendMove as sendMoveAction,
-  sendSelect as sendSelectAction,
-  sendReset as sendResetAction,
-  clearConnectionLogs,
-  onlineStore,
-  getPlayerRole as getRole,
-  isMyTurn as checkMyTurn,
-} from '../stores/onlineStore';
-import { resetGame } from '../stores/gameStore';
-import type { ConnectionStatus } from '../types/game';
-
+import { useOnlineStore } from '../stores/onlineStore';
+import { useGameStore } from '../stores/gameStore';
+import type { ConnectionStatus, GameState } from '../types/game';
+import type { GamePiece } from '../types/game';
 const router = useRouter();
+const gameStore = useGameStore();
+const onlineStore = useOnlineStore();
+
 const connectId = ref('');
 const peerId = computed(() => onlineStore.peerId);
 const connectionStatus = computed(() => onlineStore.connectionStatus as ConnectionStatus);
 const isHost = computed(() => onlineStore.isHost);
-const getPlayerRole = computed(() => getRole());
-const isMyTurn = computed(() => checkMyTurn());
+const playerRole = computed(() => onlineStore.getPlayerRole());
+const isMyTurn = computed(() => onlineStore.isMyTurn());
 const startTipKey = ref(0);
 
 // 格式化時間
@@ -149,7 +140,12 @@ const formatTime = (date: Date) => {
 
 // 清除連線日誌
 const clearLogs = () => {
-  clearConnectionLogs();
+  onlineStore.clearConnectionLogs();
+};
+
+// 重置遊戲
+const resetGame = () => {
+  gameStore.resetGame();
 };
 
 // 連線狀態訊息
@@ -175,7 +171,7 @@ const connectionStatusMessage = computed(() => {
 // 創建遊戲
 const createGame = async () => {
   try {
-    const id = await initPeer();
+    const id = await onlineStore.initPeer();
     console.log('創建遊戲成功，Peer ID:', id);
     // 確保 peerId 被正確設置
     if (!peerId.value) {
@@ -190,8 +186,8 @@ const createGame = async () => {
 const joinGame = () => {
   if (!connectId.value) return;
 
-  initPeer().then(() => {
-    connectToPeer(connectId.value);
+  onlineStore.initPeer().then(() => {
+    onlineStore.connectToPeer(connectId.value);
   }).catch(error => {
     console.error('連接錯誤:', error);
   });
@@ -212,22 +208,23 @@ const copyPeerId = () => {
 
 // 斷開連接
 const disconnect = () => {
-  disconnectPeer();
+  onlineStore.disconnect();
 };
 
 // 發送移動
-const sendMove = (x: number, y: number) => {
-  sendMoveAction(x, y);
+const sendMove = (piece: GameState['selectedPiece'], x: number, y: number) => {
+  onlineStore.sendMove(piece, x, y);
 };
 
 // 發送選擇
 const sendSelect = (piece: any, x: number, y: number) => {
-  sendSelectAction(piece, 'board', { x, y });
+  console.log('[onlineGame::sendSelect] 選擇棋子:', piece, '位置:', x, y);
+  onlineStore.sendSelect(piece, 'board', { x, y });
 };
 
 // 發送重置
 const sendReset = () => {
-  sendResetAction();
+  onlineStore.sendReset();
   startTipKey.value++; // 觸發先手提示重新顯示
 };
 

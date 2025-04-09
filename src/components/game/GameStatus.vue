@@ -84,9 +84,13 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue';
-import { gameStore } from '../../stores/gameStore';
-import { onlineStore } from '../../stores/onlineStore';
+import { useGameStore } from '../../stores/gameStore';
+import { useOnlineStore } from '../../stores/onlineStore';
 import type { ConnectionStatus } from '../../types/game';
+
+// 取得 store
+const gameStore = useGameStore();
+const onlineStore = useOnlineStore();
 
 const props = defineProps({
   online: {
@@ -137,60 +141,60 @@ const currentPlayerName = computed(() => {
 });
 
 const winnerName = computed(() => {
-  return winner.value === 'player1' ? '玩家 1' : '玩家 2'
-})
+  return winner.value === 'player1' ? '玩家 1' : '玩家 2';
+});
 
 const connectionMessage = computed(() => {
-  if (!props.connectionStatus) return ''
-  
+  if (!props.connectionStatus) return '';
+
   switch (props.connectionStatus) {
     case 'connected':
-      return '已連接'
+      return '已連接';
     case 'connecting':
-      return '正在連線中...'
+      return '正在連線中...';
     case 'waiting':
-      return '等待對手連線...'
+      return '等待對手連線...';
     case 'initializing':
-      return '初始化連線...'
+      return '初始化連線...';
     case 'disconnected':
-      return '未連接'
+      return '未連接';
     case 'error':
-      return '連線錯誤'
+      return '連線錯誤';
     default:
-      return ''
+      return '';
   }
-})
+});
 
 const toggleConnectionDetails = () => {
-  showConnectionDetails.value = !showConnectionDetails.value
-}
+  showConnectionDetails.value = !showConnectionDetails.value;
+};
 
 const copyPeerId = () => {
   if (props.peerId) {
     navigator.clipboard.writeText(props.peerId)
       .then(() => {
-        alert('已複製遊戲 ID')
+        alert('已複製遊戲 ID');
       })
       .catch(err => {
-        console.error('複製出錯:', err)
-      })
+        console.error('複製出錯:', err);
+      });
   }
-}
+};
 
 const formatTime = (date: Date) => {
-  return date.toLocaleTimeString('zh-TW', { 
-    hour: '2-digit', 
+  return date.toLocaleTimeString('zh-TW', {
+    hour: '2-digit',
     minute: '2-digit',
     second: '2-digit'
-  })
-}
+  });
+};
 
 onMounted(() => {
-  showStartTip.value = true
+  showStartTip.value = true;
   setTimeout(() => {
-    showStartTip.value = false
-  }, 3000)
-})
+    showStartTip.value = false;
+  }, 3000);
+});
 </script>
 
 <style scoped>
@@ -406,35 +410,37 @@ onMounted(() => {
   .game-status {
     padding: 12px 16px;
   }
-  
+
   .game-start-tip {
     margin-left: 0;
     margin-top: 0.5rem;
     width: 100%;
   }
-  
+
   .online-status {
     margin-left: 0;
     margin-top: 0.5rem;
   }
-  
+
   .connection-details {
     padding: 8px;
   }
-  
+
   .connection-info-item {
     flex-direction: column;
     align-items: flex-start;
     margin-bottom: 8px;
   }
-  
+
   .info-label {
     min-width: auto;
   }
 }
 
 @media (max-width: 480px) {
-  .status-win, .status-draw {
+
+  .status-win,
+  .status-draw {
     padding: 0.5rem;
   }
 }

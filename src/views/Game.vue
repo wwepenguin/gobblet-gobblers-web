@@ -26,9 +26,10 @@ import { ref } from "vue";
 import { useRouter } from 'vue-router';
 import GameArea from '../components/game/GameArea.vue';
 import GameStatus from '../components/game/GameStatus.vue';
-import { resetGame, placePiece, selectPiece } from '../stores/gameStore';
+import { useGameStore } from '../stores/gameStore';
 
 const router = useRouter();
+const gameStore = useGameStore();
 const startTipKey = ref(0);
 
 const goToHome = () => {
@@ -36,18 +37,18 @@ const goToHome = () => {
 };
 
 const handleResetGame = () => {
-  resetGame();
+  gameStore.resetGame();
   startTipKey.value++; // 觸發先手提示重新顯示
 };
 
 // 處理移動
 const handleMove = (x: number, y: number) => {
-  placePiece(x, y);
+  gameStore.placePiece(x, y);
 };
 
 // 處理選擇
 const handleSelect = (piece: any, x: number, y: number) => {
-  selectPiece(piece, 'board', { x, y });
+  gameStore.selectPiece(piece, 'board', { x, y });
 };
 </script>
 

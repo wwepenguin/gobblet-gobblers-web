@@ -6,7 +6,7 @@ import { version } from './package.json';
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: './',
+  base: '/gobblet-gobblers-web',
   server: {
     host: '0.0.0.0',
   },

@@ -1,7 +1,7 @@
 import { reactive } from 'vue';
 import Peer from 'peerjs';
 import type { OnlineGameState, PlayerType } from '../types/game';
-import { gameStore, resetGame, placePiece, selectPiece } from './gameStore';
+import { gameStore, resetGame, placePiece, selectPiece, createPiece } from './gameStore';
 
 // 擴展連線狀態類型
 export type ConnectionStatus =
@@ -380,8 +380,69 @@ const sendGameState = () => {
 
 // 處理遠端移動
 const handleRemoteMove = (data: any) => {
-  const { x, y } = data;
-  placePiece(x, y);
+  const { x, y, piece, fromPosition } = data;
+  console.log(`處理遠端移動動作: (${x}, ${y})`, data);
+
+  // 先記錄棋盤更新前的狀態
+  const topPieceBefore = gameStore.board[y][x].stack.length > 0
+    ? JSON.stringify(gameStore.board[y][x].stack[gameStore.board[y][x].stack.length - 1])
+    : "空";
+
+  // 重要：確保先選擇正確的棋子，這是關鍵步驟
+  if (piece) {
+    // 如果資料中有完整的棋子資訊，先選擇這個棋子
+    if (fromPosition) {
+      // 從棋盤上移動
+      selectPiece(piece, 'board', fromPosition);
+      console.log(`已選擇棋盤上的棋子：`, piece, fromPosition);
+    } else {
+      // 從手牌移動
+      selectPiece(piece, 'hand');
+      console.log(`已選擇手牌中的棋子：`, piece);
+    }
+  } else {
+    // 如果沒有棋子資訊，嘗試從當前玩家的手牌選擇一個
+    const currentPlayer = gameStore.currentPlayer;
+    // 先嘗試大棋子，如果沒有，再嘗試中等，然後小棋子
+    const sizes = ['large', 'medium', 'small'] as const;
+
+    let selectedPiece = null;
+    let selectedSize = null;
+
+    for (const size of sizes) {
+      if (gameStore.playerPieces[currentPlayer][size] > 0) {
+        selectedSize = size;
+        break;
+      }
+    }
+
+    if (selectedSize) {
+      selectedPiece = createPiece(selectedSize, currentPlayer);
+      selectPiece(selectedPiece, 'hand');
+      console.log(`自動選擇手牌中的棋子：`, selectedPiece);
+    } else {
+      console.error('無法找到可用的棋子');
+      addConnectionLog('無法找到可用的棋子執行對手的移動', 'error');
+      return;
+    }
+  }
+
+  // 執行移動
+  const success = placePiece(x, y);
+
+  // 記錄棋盤更新後的狀態
+  const topPieceAfter = gameStore.board[y][x].stack.length > 0
+    ? JSON.stringify(gameStore.board[y][x].stack[gameStore.board[y][x].stack.length - 1])
+    : "空";
+
+  console.log(`棋盤更新結果：${success ? "成功" : "失敗"}, 位置(${x}, ${y})，更新前: ${topPieceBefore}, 更新後: ${topPieceAfter}`);
+
+  // 記錄到連線日誌
+  if (success) {
+    addConnectionLog(`已在位置(${x}, ${y})成功執行對手的移動`, 'success');
+  } else {
+    addConnectionLog(`無法在位置(${x}, ${y})執行對手的移動`, 'error');
+  }
 };
 
 // 處理遠端選擇
@@ -392,10 +453,17 @@ const handleRemoteSelect = (data: any) => {
 
 // 發送移動
 export const sendMove = (x: number, y: number) => {
+  // 取得選擇的棋子資訊
+  const selectedPiece = gameStore.selectedPiece;
+
+  // 傳送更完整的資料，包含棋子和起始位置資訊
   sendData({
     type: 'move',
     x,
-    y
+    y,
+    piece: selectedPiece.piece,
+    source: selectedPiece.source,
+    fromPosition: selectedPiece.position
   });
 };
 

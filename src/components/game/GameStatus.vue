@@ -5,54 +5,136 @@
         <div class="player-indicator" :class="`player-${currentPlayer}`"></div>
         <span>{{ currentPlayerName }} 的回合</span>
       </div>
-      
+
       <div class="game-start-tip" v-if="showStartTip">
         {{ currentPlayerName }} 將先手
       </div>
-      
+
       <div v-if="online" class="online-status" :class="connectionStatus">
         <span>{{ connectionMessage }}</span>
+        <button class="toggle-details-btn" @click="toggleConnectionDetails">
+          {{ showConnectionDetails ? '隱藏詳情' : '顯示詳情' }}
+        </button>
+      </div>
+
+      <div v-if="online && showConnectionDetails" class="connection-details">
+        <div class="connection-info-item">
+          <span class="info-label">連線角色：</span>
+          <span class="info-value">{{ isHost ? '主機 (玩家 1)' : '加入者 (玩家 2)' }}</span>
+        </div>
+        <div class="connection-info-item">
+          <span class="info-label">遊戲 ID：</span>
+          <span class="info-value">{{ peerId || '未知' }}</span>
+          <button v-if="peerId" class="copy-button" @click="copyPeerId">複製</button>
+        </div>
+        <div class="connection-info-item">
+          <span class="info-label">連線 ID：</span>
+          <span class="info-value">{{ connectionId || '未知' }}</span>
+        </div>
+        <div class="connection-info-item" v-if="connectionError">
+          <span class="info-label">錯誤：</span>
+          <span class="info-value error-text">{{ connectionError }}</span>
+        </div>
+        <div class="connection-info-item">
+          <span class="info-label">最新動態：</span>
+          <span class="info-value" v-if="latestLog">
+            {{ formatTime(latestLog.time) }} - {{ latestLog.message }}
+          </span>
+          <span class="info-value" v-else>無</span>
+        </div>
       </div>
     </div>
-    
+
     <div v-else-if="gameStatus === 'win'" class="status-win">
       <div class="win-message">
         <div class="player-indicator" :class="`player-${winner}`"></div>
         <span>{{ winnerName }} 勝利！</span>
       </div>
       <button class="restart-button" @click="$emit('restart')">重新開始</button>
+
+      <div v-if="online" class="online-status-win" :class="connectionStatus">
+        <span>{{ connectionMessage }}</span>
+        <button class="toggle-details-btn" @click="toggleConnectionDetails">
+          {{ showConnectionDetails ? '隱藏詳情' : '顯示詳情' }}
+        </button>
+
+        <div v-if="showConnectionDetails" class="connection-details">
+          <div class="connection-info-item">
+            <span class="info-label">連線角色：</span>
+            <span class="info-value">{{ isHost ? '主機 (玩家 1)' : '加入者 (玩家 2)' }}</span>
+          </div>
+          <div class="connection-info-item">
+            <span class="info-label">遊戲 ID：</span>
+            <span class="info-value">{{ peerId || '未知' }}</span>
+          </div>
+        </div>
+      </div>
     </div>
-    
+
     <div v-else-if="gameStatus === 'draw'" class="status-draw">
       <div class="draw-message">平局！</div>
       <button class="restart-button" @click="$emit('restart')">重新開始</button>
+
+      <div v-if="online" class="online-status-win" :class="connectionStatus">
+        <span>{{ connectionMessage }}</span>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue'
-import { gameStore } from '../../stores/gameStore'
-import type { ConnectionStatus } from '../../types/game'
+import { computed, ref, onMounted } from 'vue';
+import { gameStore } from '../../stores/gameStore';
+import { onlineStore } from '../../stores/onlineStore';
+import type { ConnectionStatus } from '../../types/game';
 
-const props = defineProps<{
-  online?: boolean
-  connectionStatus?: ConnectionStatus
-  isHost?: boolean
-}>()
+const props = defineProps({
+  online: {
+    type: Boolean,
+    default: false
+  },
+  connectionStatus: {
+    type: String as () => ConnectionStatus,
+    default: 'disconnected'
+  },
+  isHost: {
+    type: Boolean,
+    default: false
+  },
+  peerId: {
+    type: String,
+    default: ''
+  },
+  connectionId: {
+    type: String,
+    default: ''
+  },
+  connectionError: {
+    type: String,
+    default: ''
+  }
+});
 
 defineEmits<{
-  (e: 'restart'): void
-}>()
+  (e: 'restart'): void;
+}>();
 
-const gameStatus = computed(() => gameStore.gameStatus)
-const currentPlayer = computed(() => gameStore.currentPlayer)
-const winner = computed(() => gameStore.winner)
-const showStartTip = ref(false)
+const gameStatus = computed(() => gameStore.gameStatus);
+const currentPlayer = computed(() => gameStore.currentPlayer);
+const winner = computed(() => gameStore.winner);
+const showStartTip = ref(false);
+const showConnectionDetails = ref(false);
+
+const latestLog = computed(() => {
+  if (onlineStore.connectionLogs && onlineStore.connectionLogs.length > 0) {
+    return onlineStore.connectionLogs[0];
+  }
+  return null;
+});
 
 const currentPlayerName = computed(() => {
-  return currentPlayer.value === 'player1' ? '玩家 1' : '玩家 2'
-})
+  return currentPlayer.value === 'player1' ? '玩家 1' : '玩家 2';
+});
 
 const winnerName = computed(() => {
   return winner.value === 'player1' ? '玩家 1' : '玩家 2'
@@ -79,8 +161,31 @@ const connectionMessage = computed(() => {
   }
 })
 
+const toggleConnectionDetails = () => {
+  showConnectionDetails.value = !showConnectionDetails.value
+}
+
+const copyPeerId = () => {
+  if (props.peerId) {
+    navigator.clipboard.writeText(props.peerId)
+      .then(() => {
+        alert('已複製遊戲 ID')
+      })
+      .catch(err => {
+        console.error('複製出錯:', err)
+      })
+  }
+}
+
+const formatTime = (date: Date) => {
+  return date.toLocaleTimeString('zh-TW', { 
+    hour: '2-digit', 
+    minute: '2-digit',
+    second: '2-digit'
+  })
+}
+
 onMounted(() => {
-  // 顯示先手提示，3秒後消失
   showStartTip.value = true
   setTimeout(() => {
     showStartTip.value = false
@@ -144,18 +249,27 @@ onMounted(() => {
 }
 
 @keyframes flash {
-  0%, 100% { opacity: 0.7; }
-  50% { opacity: 1; }
+
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+
+  50% {
+    opacity: 1;
+  }
 }
 
-.status-win, .status-draw {
+.status-win,
+.status-draw {
   display: flex;
   flex-direction: column;
   align-items: center;
   width: 100%;
 }
 
-.win-message, .draw-message {
+.win-message,
+.draw-message {
   display: flex;
   align-items: center;
   font-size: 1.2rem;
@@ -194,7 +308,7 @@ onMounted(() => {
 }
 
 .online-status.connecting,
-.online-status.waiting, 
+.online-status.waiting,
 .online-status.initializing {
   background-color: #fff8e1;
   color: #f57c00;
@@ -212,7 +326,82 @@ onMounted(() => {
   font-weight: bold;
 }
 
-/* 移動設備上的狀態顯示調整 */
+.toggle-details-btn {
+  margin-left: 8px;
+  padding: 2px 6px;
+  background-color: rgba(255, 255, 255, 0.3);
+  border: none;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.toggle-details-btn:hover {
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+.connection-details {
+  width: 100%;
+  margin-top: 10px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+  border: 1px solid #e0e0e0;
+}
+
+.connection-info-item {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.info-label {
+  font-weight: 600;
+  color: #555;
+  min-width: 80px;
+}
+
+.info-value {
+  color: #4a55a2;
+  word-break: break-all;
+}
+
+.error-text {
+  color: #c62828;
+}
+
+.copy-button {
+  background-color: #eee;
+  border: none;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  margin-left: 5px;
+}
+
+.copy-button:hover {
+  background-color: #ddd;
+}
+
+.online-status-win {
+  margin-top: 15px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
 @media (max-width: 768px) {
   .game-status {
     padding: 12px 16px;
@@ -228,12 +417,25 @@ onMounted(() => {
     margin-left: 0;
     margin-top: 0.5rem;
   }
+  
+  .connection-details {
+    padding: 8px;
+  }
+  
+  .connection-info-item {
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 8px;
+  }
+  
+  .info-label {
+    min-width: auto;
+  }
 }
 
-/* 小屏幕上的狀態顯示調整 */
 @media (max-width: 480px) {
   .status-win, .status-draw {
     padding: 0.5rem;
   }
 }
-</style> 
+</style>

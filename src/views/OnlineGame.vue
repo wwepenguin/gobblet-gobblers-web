@@ -96,28 +96,13 @@
 
     <!-- 已連接狀態 - 顯示遊戲界面 -->
     <template v-else-if="connectionStatus === 'connected'">
-      <GameStatus :online="true" :connection-status="connectionStatus" :is-host="isHost" @restart="sendReset"
+      <GameStatus :online="true" :connection-status="connectionStatus" :is-host="isHost" :peer-id="peerId"
+        :connection-id="onlineStore.connectionId" :connection-error="onlineStore.connectionError" @restart="sendReset"
         :key="startTipKey" />
 
       <!-- 使用共用的 GameArea 元件 -->
       <GameArea :online="true" :is-my-turn="isMyTurn" :player-role="getPlayerRole" @move="sendMove"
         @select="sendSelect" />
-
-      <!-- 簡潔的連線資訊 -->
-      <div class="connection-info">
-        <div class="info-item">
-          <span class="label">遊戲角色：</span>
-          <span class="value">{{ getPlayerRole === 'player1' ? '玩家 1 (主機)' : '玩家 2 (加入者)' }}</span>
-        </div>
-        <div class="info-item">
-          <span class="label">遊戲 ID：</span>
-          <span class="value">{{ peerId }}</span>
-        </div>
-        <div class="info-item">
-          <span class="label">連線 ID：</span>
-          <span class="value">{{ onlineStore.connectionId }}</span>
-        </div>
-      </div>
     </template>
   </div>
 </template>

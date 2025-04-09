@@ -117,9 +117,11 @@ function updateServiceWorker() {
   will-change: filter;
   transition: filter 300ms;
 }
+
 .logo:hover {
   filter: drop-shadow(0 0 2em #646cffaa);
 }
+
 .logo.vue:hover {
   filter: drop-shadow(0 0 2em #42b883aa);
 }
@@ -149,7 +151,8 @@ function updateServiceWorker() {
   gap: 8px;
 }
 
-.update-button, .close-button {
+.update-button,
+.close-button {
   cursor: pointer;
   border: none;
   border-radius: 4px;

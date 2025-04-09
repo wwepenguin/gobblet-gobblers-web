@@ -6,19 +6,12 @@
         <button class="control-button" @click="goToHome">返回主頁</button>
       </div>
     </div>
-    
+
     <GameStatus @restart="handleResetGame" :key="startTipKey" />
-    
-    <div class="game-area">
-      <PlayerHand player="player1" />
-      
-      <div class="board-container">
-        <GameBoard />
-      </div>
-      
-      <PlayerHand player="player2" />
-    </div>
-    
+
+    <!-- 使用共用的 GameArea 元件 -->
+    <GameArea :online="false" @move="handleMove" @select="handleSelect" />
+
     <!-- <div class="game-instructions">
       <h3>如何遊玩</h3>
       <p>1. 點擊你的棋子並放置在棋盤上</p>
@@ -30,23 +23,32 @@
 
 <script setup lang="ts">
 import { ref } from "vue";
-import { useRouter } from 'vue-router'
-import GameBoard from '../components/game/GameBoard.vue'
-import PlayerHand from '../components/game/PlayerHand.vue'
-import GameStatus from '../components/game/GameStatus.vue'
-import { resetGame } from '../stores/gameStore'
+import { useRouter } from 'vue-router';
+import GameArea from '../components/game/GameArea.vue';
+import GameStatus from '../components/game/GameStatus.vue';
+import { resetGame, placePiece, selectPiece } from '../stores/gameStore';
 
-const router = useRouter()
-const startTipKey = ref(0)
+const router = useRouter();
+const startTipKey = ref(0);
 
 const goToHome = () => {
-  router.push('/')
-}
+  router.push('/');
+};
 
 const handleResetGame = () => {
-  resetGame()
-  startTipKey.value++ // 觸發先手提示重新顯示
-}
+  resetGame();
+  startTipKey.value++; // 觸發先手提示重新顯示
+};
+
+// 處理移動
+const handleMove = (x: number, y: number) => {
+  placePiece(x, y);
+};
+
+// 處理選擇
+const handleSelect = (piece: any, x: number, y: number) => {
+  selectPiece(piece, 'board', { x, y });
+};
 </script>
 
 <style scoped>
@@ -93,6 +95,7 @@ const handleResetGame = () => {
   transition: all 0.2s ease;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
+
 .control-button:hover {
   background-color: #394280;
   transform: translateY(-2px);
@@ -108,10 +111,12 @@ const handleResetGame = () => {
   &.player1 {
     order: 1;
   }
-  &.board-container{
+
+  &.board-container {
     order: 2;
   }
-  &.player2{
+
+  &.player2 {
     order: 3;
   }
 }
@@ -146,12 +151,12 @@ const handleResetGame = () => {
     align-items: center;
     text-align: center;
   }
-  
+
   .game-area {
     flex-direction: column;
     gap: 2rem;
   }
-  
+
 }
 
 /* 小屏幕上的布局調整 */
@@ -159,9 +164,9 @@ const handleResetGame = () => {
   .game-container {
     padding: 0.5rem;
   }
-  
+
   .game-instructions {
     padding: 1rem;
   }
 }
-</style> 
+</style>

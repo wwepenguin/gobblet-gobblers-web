@@ -8,18 +8,18 @@
         <button class="control-button" @click="goToHome">返回主頁</button>
       </div>
     </div>
-    
+
     <!-- 連線狀態顯示 -->
     <div class="connection-status-banner" :class="connectionStatus">
       <div class="status-icon"></div>
       <span class="status-text">{{ connectionStatusMessage }}</span>
     </div>
-    
+
     <!-- 連線錯誤顯示 -->
     <div v-if="connectionStatus === 'error'" class="error-message">
       {{ onlineStore.connectionError }}
     </div>
-    
+
     <!-- 未連接狀態 - 顯示創建/加入遊戲選項 -->
     <div v-if="connectionStatus === 'disconnected'" class="connection-panel">
       <div class="connection-options">
@@ -34,36 +34,26 @@
             <p class="help-text">分享此 ID 給朋友來連接</p>
           </div>
         </div>
-        
+
         <div class="divider"></div>
-        
+
         <div class="connection-option">
           <h3>加入遊戲</h3>
           <div class="join-form">
-            <input 
-              v-model="connectId" 
-              type="text" 
-              placeholder="輸入遊戲 ID" 
-              class="peer-input"
-            />
-            <button 
-              class="action-button" 
-              @click="joinGame" 
-              :disabled="!connectId"
-            >
+            <input v-model="connectId" type="text" placeholder="輸入遊戲 ID" class="peer-input" />
+            <button class="action-button" @click="joinGame" :disabled="!connectId">
               加入
             </button>
           </div>
         </div>
       </div>
-      
+
       <!-- 連線日誌顯示 -->
       <div class="connection-logs">
         <h4>連線日誌</h4>
         <button class="small-button" @click="clearLogs">清除</button>
         <div class="logs-container">
-          <div v-for="(log, index) in onlineStore.connectionLogs" :key="index" 
-               class="log-item" :class="log.type">
+          <div v-for="(log, index) in onlineStore.connectionLogs" :key="index" class="log-item" :class="log.type">
             <span class="log-time">{{ formatTime(log.time) }}</span>
             <span class="log-message">{{ log.message }}</span>
           </div>
@@ -73,13 +63,13 @@
         </div>
       </div>
     </div>
-    
+
     <!-- 連接中狀態 - 顯示等待玩家連接 -->
     <div v-else-if="['initializing', 'waiting', 'connecting'].includes(connectionStatus)" class="connection-panel">
       <div class="waiting-panel">
         <h2>{{ connectionStatusMessage }}</h2>
         <div class="loader"></div>
-        
+
         <div class="peer-id-display" v-if="isHost && peerId">
           <p>分享此遊戲 ID 給你的朋友：</p>
           <div class="peer-id">
@@ -87,57 +77,32 @@
             <button class="copy-button" @click="copyPeerId">複製</button>
           </div>
         </div>
-        
+
         <button class="cancel-button" @click="disconnect">取消</button>
       </div>
-      
+
       <!-- 連線日誌顯示 -->
       <div class="connection-logs">
         <h4>連線日誌</h4>
         <button class="small-button" @click="clearLogs">清除</button>
         <div class="logs-container">
-          <div v-for="(log, index) in onlineStore.connectionLogs" :key="index" 
-               class="log-item" :class="log.type">
+          <div v-for="(log, index) in onlineStore.connectionLogs" :key="index" class="log-item" :class="log.type">
             <span class="log-time">{{ formatTime(log.time) }}</span>
             <span class="log-message">{{ log.message }}</span>
           </div>
         </div>
       </div>
     </div>
-    
+
     <!-- 已連接狀態 - 顯示遊戲界面 -->
     <template v-else-if="connectionStatus === 'connected'">
-      <GameStatus 
-        :online="true" 
-        :connection-status="connectionStatus"
-        :is-host="isHost"
-        @restart="sendReset"
-        :key="startTipKey"
-      />
-      
-      <div class="game-area">
-        <PlayerHand 
-          player="player1" 
-          :online="true"
-          :is-my-turn="isMyTurn && getPlayerRole === 'player1'"
-        />
-        
-        <div class="board-container">
-          <GameBoard 
-            :online="true"
-            :is-my-turn="isMyTurn"
-            @move="sendMove"
-            @select="sendSelect"
-          />
-        </div>
-        
-        <PlayerHand 
-          player="player2" 
-          :online="true"
-          :is-my-turn="isMyTurn && getPlayerRole === 'player2'"
-        />
-      </div>
-      
+      <GameStatus :online="true" :connection-status="connectionStatus" :is-host="isHost" @restart="sendReset"
+        :key="startTipKey" />
+
+      <!-- 使用共用的 GameArea 元件 -->
+      <GameArea :online="true" :is-my-turn="isMyTurn" :player-role="getPlayerRole" @move="sendMove"
+        @select="sendSelect" />
+
       <!-- 簡潔的連線資訊 -->
       <div class="connection-info">
         <div class="info-item">
@@ -158,14 +123,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onBeforeUnmount, watch } from 'vue'
-import { useRouter } from 'vue-router'
-import GameBoard from '../components/game/GameBoard.vue'
-import PlayerHand from '../components/game/PlayerHand.vue'
-import GameStatus from '../components/game/GameStatus.vue'
-import { 
-  initPeer, 
-  connectToPeer, 
+import { ref, computed, onBeforeUnmount, watch } from 'vue';
+import { useRouter } from 'vue-router';
+import GameBoard from '../components/game/GameBoard.vue';
+import PlayerHand from '../components/game/PlayerHand.vue';
+import GameStatus from '../components/game/GameStatus.vue';
+import GameArea from '../components/game/GameArea.vue';
+import {
+  initPeer,
+  connectToPeer,
   disconnect as disconnectPeer,
   sendMove as sendMoveAction,
   sendSelect as sendSelectAction,
@@ -174,32 +140,32 @@ import {
   onlineStore,
   getPlayerRole as getRole,
   isMyTurn as checkMyTurn,
-} from '../stores/onlineStore'
-import { resetGame } from '../stores/gameStore'
-import type { ConnectionStatus } from '../types/game'
+} from '../stores/onlineStore';
+import { resetGame } from '../stores/gameStore';
+import type { ConnectionStatus } from '../types/game';
 
-const router = useRouter()
-const connectId = ref('')
-const peerId = computed(() => onlineStore.peerId)
-const connectionStatus = computed(() => onlineStore.connectionStatus as ConnectionStatus)
-const isHost = computed(() => onlineStore.isHost)
-const getPlayerRole = computed(() => getRole())
-const isMyTurn = computed(() => checkMyTurn())
-const startTipKey = ref(0)
+const router = useRouter();
+const connectId = ref('');
+const peerId = computed(() => onlineStore.peerId);
+const connectionStatus = computed(() => onlineStore.connectionStatus as ConnectionStatus);
+const isHost = computed(() => onlineStore.isHost);
+const getPlayerRole = computed(() => getRole());
+const isMyTurn = computed(() => checkMyTurn());
+const startTipKey = ref(0);
 
 // 格式化時間
 const formatTime = (date: Date) => {
-  return date.toLocaleTimeString('zh-TW', { 
-    hour: '2-digit', 
+  return date.toLocaleTimeString('zh-TW', {
+    hour: '2-digit',
     minute: '2-digit',
     second: '2-digit'
   });
-}
+};
 
 // 清除連線日誌
 const clearLogs = () => {
   clearConnectionLogs();
-}
+};
 
 // 連線狀態訊息
 const connectionStatusMessage = computed(() => {
@@ -224,80 +190,80 @@ const connectionStatusMessage = computed(() => {
 // 創建遊戲
 const createGame = async () => {
   try {
-    const id = await initPeer()
-    console.log('創建遊戲成功，Peer ID:', id)
+    const id = await initPeer();
+    console.log('創建遊戲成功，Peer ID:', id);
     // 確保 peerId 被正確設置
     if (!peerId.value) {
-      alert('遊戲 ID 生成失敗，請重試')
+      alert('遊戲 ID 生成失敗，請重試');
     }
   } catch (error) {
-    console.error('初始化 Peer 出錯:', error)
+    console.error('初始化 Peer 出錯:', error);
   }
-}
+};
 
 // 加入遊戲
 const joinGame = () => {
-  if (!connectId.value) return
-  
+  if (!connectId.value) return;
+
   initPeer().then(() => {
-    connectToPeer(connectId.value)
+    connectToPeer(connectId.value);
   }).catch(error => {
-    console.error('連接錯誤:', error)
-  })
-}
+    console.error('連接錯誤:', error);
+  });
+};
 
 // 複製 Peer ID
 const copyPeerId = () => {
   if (peerId.value) {
     navigator.clipboard.writeText(peerId.value)
       .then(() => {
-        alert('已複製遊戲 ID')
+        alert('已複製遊戲 ID');
       })
       .catch(err => {
-        console.error('複製出錯:', err)
-      })
+        console.error('複製出錯:', err);
+      });
   }
-}
+};
 
 // 斷開連接
 const disconnect = () => {
-  disconnectPeer()
-}
+  disconnectPeer();
+};
 
 // 發送移動
 const sendMove = (x: number, y: number) => {
-  sendMoveAction(x, y)
-}
+  sendMoveAction(x, y);
+};
 
 // 發送選擇
 const sendSelect = (piece: any, x: number, y: number) => {
-  sendSelectAction(piece, 'board', { x, y })
-}
+  sendSelectAction(piece, 'board', { x, y });
+};
 
 // 發送重置
 const sendReset = () => {
-  sendResetAction()
-  startTipKey.value++ // 觸發先手提示重新顯示
-}
+  sendResetAction();
+  startTipKey.value++; // 觸發先手提示重新顯示
+};
 
 // 返回主頁
 const goToHome = () => {
-  disconnect()
-  router.push('/')
-}
+  disconnect();
+  router.push('/');
+};
 
 // 監聽 peerId 的變更
 watch(() => onlineStore.peerId, (newValue) => {
-  console.log('peerId 變更為:', newValue)
+  console.log('peerId 變更為:', newValue);
   if (newValue) {
-    console.log('成功獲取 Peer ID')
+    console.log('成功獲取 Peer ID');
   }
-})
+});
 
 // 組件卸載前斷開連接
 onBeforeUnmount(() => {
-  disconnect()
-})
+  disconnect();
+});
 </script>
 
 <style scoped>
@@ -329,6 +295,9 @@ onBeforeUnmount(() => {
 }
 
 .control-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   background-color: #4a55a2;
   color: white;
   border: none;
@@ -457,9 +426,21 @@ onBeforeUnmount(() => {
 
 .game-area {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  margin: 3rem 0;
+  margin: 2rem 0;
+
+  &.player1 {
+    order: 1;
+  }
+
+  &.board-container {
+    order: 2;
+  }
+
+  &.player2 {
+    order: 3;
+  }
 }
 
 .board-container {
@@ -494,8 +475,13 @@ onBeforeUnmount(() => {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .cancel-button {
@@ -524,24 +510,25 @@ onBeforeUnmount(() => {
     align-items: center;
     text-align: center;
   }
-  
+
   .connection-options {
     flex-direction: column;
   }
-  
+
   .divider {
     width: 80%;
     height: 1px;
     margin: 1.5rem 0;
   }
-  
+
   .game-area {
     flex-direction: column;
     gap: 2rem;
   }
-  
+
   .board-container {
-    order: -1; /* 棋盤放在中間 */
+    order: -1;
+    /* 棋盤放在中間 */
   }
 }
 
@@ -550,16 +537,16 @@ onBeforeUnmount(() => {
   .online-game-container {
     padding: 0.5rem;
   }
-  
+
   .connection-panel {
     padding: 1rem;
   }
-  
+
   .peer-id {
     flex-direction: column;
     gap: 0.5rem;
   }
-  
+
   .peer-id span {
     width: 100%;
     overflow-x: auto;
@@ -631,9 +618,17 @@ onBeforeUnmount(() => {
 }
 
 @keyframes pulse {
-  0% { opacity: 0.6; }
-  50% { opacity: 1; }
-  100% { opacity: 0.6; }
+  0% {
+    opacity: 0.6;
+  }
+
+  50% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0.6;
+  }
 }
 
 /* 錯誤訊息 */
@@ -748,13 +743,13 @@ onBeforeUnmount(() => {
     margin-top: 1rem;
     padding: 0.5rem;
   }
-  
+
   .logs-container {
     max-height: 150px;
   }
-  
+
   .connection-info {
     flex-direction: column;
   }
 }
-</style> 
+</style>

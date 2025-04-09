@@ -1,0 +1,83 @@
+<template>
+    <div class="game-area">
+        <PlayerHand player="player1" :online="online"
+            :is-my-turn="online ? (isMyTurn && playerRole === 'player1') : (currentPlayer === 'player1')" />
+
+        <div class="board-container">
+            <GameBoard :online="online" :is-my-turn="isMyTurn" @move="handleMove" @select="handleSelect" />
+        </div>
+
+        <PlayerHand player="player2" :online="online"
+            :is-my-turn="online ? (isMyTurn && playerRole === 'player2') : (currentPlayer === 'player2')" />
+    </div>
+</template>
+
+<script setup lang="ts">
+import GameBoard from './GameBoard.vue';
+import PlayerHand from './PlayerHand.vue';
+import { gameStore } from '../../stores/gameStore';
+import { computed } from 'vue';
+
+// 定義屬性
+const props = defineProps({
+    // 是否為線上模式
+    online: {
+        type: Boolean,
+        default: false
+    },
+    // 線上模式專用屬性
+    isMyTurn: {
+        type: Boolean,
+        default: true
+    },
+    // 玩家角色 (線上模式)
+    playerRole: {
+        type: String,
+        default: 'player1'
+    }
+});
+
+// 定義事件
+const emit = defineEmits(['move', 'select']);
+
+// 計算目前玩家
+const currentPlayer = computed(() => gameStore.currentPlayer);
+
+// 處理移動
+const handleMove = (x: number, y: number) => {
+    emit('move', x, y);
+};
+
+// 處理選擇
+const handleSelect = (piece: any, x: number, y: number) => {
+    emit('select', piece, x, y);
+};
+</script>
+
+<style scoped>
+.game-area {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 2rem 0;
+}
+
+.board-container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+}
+
+/* 移動裝置上的布局調整 */
+@media (max-width: 768px) {
+    .game-area {
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .board-container {
+        order: -1;
+        /* 棋盤放在中間 */
+    }
+}
+</style>
